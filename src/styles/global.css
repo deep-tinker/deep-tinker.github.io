@@ -1,74 +1,130 @@
-:root {
-  --bg: #0a0a0f;
-  --bg-card: #12121a;
-  --bg-card-hover: #1a1a2e;
-  --cyan: #00d4ff;
-  --green: #00ff88;
-  --text: #e0e0e0;
-  --text-dim: #8888aa;
-  --border: #1e1e2e;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --gradient: linear-gradient(135deg, var(--cyan), var(--green));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        overflow-x: hidden;
+    }
+
+    body {
+        background-color: #ffffff;
+        color: #000000;
+        font-family: "Space Grotesk", sans-serif;
+        overflow-x: hidden;
+        /* Space for the fixed marquee ticker at the bottom */
+        padding-bottom: 2rem;
+    }
+
+    ::selection {
+        background-color: #ccff00;
+        color: #000000;
+    }
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@layer components {
+    .brutalist-card {
+        background: #ffffff;
+        border: 4px solid #000000;
+        box-shadow: 6px 6px 0px 0px #000000;
+        transition: all 0.1s ease;
+        border-radius: 0;
+    }
 
-html { scroll-behavior: smooth; }
+    @media (min-width: 768px) {
+        .brutalist-card {
+            box-shadow: 10px 10px 0px 0px #000000;
+        }
+        .brutalist-card:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 14px 14px 0px 0px #000000;
+        }
+    }
 
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
+    .brutalist-card-accent {
+        background: #ccff00;
+        border: 4px solid #000000;
+        box-shadow: 6px 6px 0px 0px #000000;
+        border-radius: 0;
+    }
+
+    @media (min-width: 768px) {
+        .brutalist-card-accent {
+            box-shadow: 10px 10px 0px 0px #000000;
+        }
+    }
+
+    .brutalist-btn {
+        background: #ccff00;
+        border: 4px solid #000000;
+        box-shadow: 4px 4px 0px 0px #000000;
+        transition: all 0.1s ease;
+        border-radius: 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 900;
+    }
+
+    @media (min-width: 768px) {
+        .brutalist-btn {
+            box-shadow: 6px 6px 0px 0px #000000;
+        }
+        .brutalist-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px 0px #000000;
+        }
+        .brutalist-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px 0px #000000;
+        }
+    }
+
+    .grid-bg {
+        background-image: radial-gradient(#000000 1px, transparent 1px);
+        background-size: 32px 32px;
+    }
+
+    .marquee {
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .marquee-content {
+        display: inline-block;
+        animation: marquee 20s linear infinite;
+    }
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  z-index: 0;
+@layer utilities {
+    .material-symbols-outlined {
+        font-variation-settings:
+            "FILL" 1,
+            "wght" 700,
+            "GRAD" 0,
+            "opsz" 24;
+    }
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  top: 20%;
-  left: 10%;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(0,212,255,.06) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
 }
-
-#root { position: relative; z-index: 1; }
-
-a { color: var(--cyan); text-decoration: none; }
-
-::selection { background: rgba(0,212,255,.3); }
-
-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 100px 24px;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 48px;
-}
-
-.section-title span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #ffffff;
+}
+::-webkit-scrollbar-thumb {
+    background: #000000;
+    border-radius: 0;
+}
