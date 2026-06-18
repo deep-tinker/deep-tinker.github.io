@@ -1,0 +1,87 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#000000",
+        accent: "#CCFF00",
+        surface: "#ffffff",
+        "on-surface": "#000000",
+        "on-accent": "#000000",
+        outline: "#000000",
+      },
+      borderWidth: {
+        3: "3px",
+        4: "4px",
+        6: "6px",
+        8: "8px",
+      },
+      borderRadius: {
+        none: "0",
+        DEFAULT: "0",
+        lg: "0",
+        xl: "0",
+        full: "9999px",
+      },
+      spacing: {
+        xs: "4px",
+        gutter: "24px",
+        sm: "12px",
+        base: "8px",
+        "container-margin": "32px",
+        xl: "80px",
+        lg: "48px",
+        md: "24px",
+        "section-padding-mobile": "64px",
+        "section-padding-desktop": "120px",
+      },
+      fontFamily: {
+        "body-md": ["Space Grotesk", "sans-serif"],
+        "display-lg": ["Space Grotesk", "sans-serif"],
+        "headline-lg": ["Space Grotesk", "sans-serif"],
+        "display-lg-mobile": ["Space Grotesk", "sans-serif"],
+        "headline-md": ["Space Grotesk", "sans-serif"],
+        "headline-sm": ["Space Grotesk", "sans-serif"],
+        "body-lg": ["Space Grotesk", "sans-serif"],
+        "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+        "label-lg": ["JetBrains Mono", "monospace"],
+        "label-md": ["JetBrains Mono", "monospace"],
+        "label-sm": ["JetBrains Mono", "monospace"],
+        caption: ["JetBrains Mono", "monospace"],
+        mono: ["JetBrains Mono", "monospace"],
+        grotesk: ["Space Grotesk", "sans-serif"],
+      },
+      fontSize: {
+        "body-md": ["16px", { lineHeight: "1.4", fontWeight: "400" }],
+        "display-lg": [
+          "120px",
+          { lineHeight: "0.9", letterSpacing: "-0.05em", fontWeight: "800" },
+        ],
+        "headline-lg": ["64px", { lineHeight: "1.0", fontWeight: "700" }],
+        "display-lg-mobile": ["64px", { lineHeight: "0.9", fontWeight: "800" }],
+        "headline-md": ["48px", { lineHeight: "1.1", fontWeight: "700" }],
+        "headline-sm": ["28px", { lineHeight: "1.2", fontWeight: "700" }],
+        "body-lg": ["20px", { lineHeight: "1.4", fontWeight: "400" }],
+        "headline-lg-mobile": [
+          "40px",
+          { lineHeight: "1.1", fontWeight: "700" },
+        ],
+        "label-lg": [
+          "16px",
+          { lineHeight: "1.4", letterSpacing: "0.02em", fontWeight: "700" },
+        ],
+        "label-md": [
+          "14px",
+          { lineHeight: "1.2", letterSpacing: "0.02em", fontWeight: "700" },
+        ],
+        "label-sm": [
+          "12px",
+          { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "700" },
+        ],
+        caption: ["12px", { lineHeight: "1.2", fontWeight: "400" }],
+      },
+    },
+  },
+  plugins: [],
+};
