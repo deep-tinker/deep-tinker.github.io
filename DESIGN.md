@@ -1,108 +1,73 @@
 ---
-name: Pragati Ranjan — Portfolio(Vivid Pastel Bloom)
+name: Pragati Ranjan — Portfolio (Neon Brutalist)
 colors:
-  surface: '#f9f9ff'
-  surface-dim: '#cfdaf2'
-  surface-bright: '#f9f9ff'
-  surface-container-lowest: '#ffffff'
-  surface-container-low: '#f0f3ff'
-  surface-container: '#e7eeff'
-  surface-container-high: '#dee8ff'
-  surface-container-highest: '#d8e3fb'
-  on-surface: '#111c2d'
-  on-surface-variant: '#3d4947'
-  inverse-surface: '#263143'
-  inverse-on-surface: '#ecf1ff'
-  outline: '#6d7a77'
-  outline-variant: '#bcc9c6'
-  surface-tint: '#006a61'
-  primary: '#00685f'
+  background: '#ffffff'
+  surface: '#ffffff'
+  surface-inverse: '#000000'
+  on-surface: '#000000'
+  on-surface-inverse: '#ffffff'
+  primary: '#000000'
   on-primary: '#ffffff'
-  primary-container: '#008378'
-  on-primary-container: '#f4fffc'
-  inverse-primary: '#6bd8cb'
-  secondary: '#712ae2'
-  on-secondary: '#ffffff'
-  secondary-container: '#8a4cfc'
-  on-secondary-container: '#fffbff'
-  tertiary: '#825100'
-  on-tertiary: '#ffffff'
-  tertiary-container: '#a36700'
-  on-tertiary-container: '#fffbff'
-  error: '#ba1a1a'
-  on-error: '#ffffff'
-  error-container: '#ffdad6'
-  on-error-container: '#93000a'
-  primary-fixed: '#89f5e7'
-  primary-fixed-dim: '#6bd8cb'
-  on-primary-fixed: '#00201d'
-  on-primary-fixed-variant: '#005049'
-  secondary-fixed: '#eaddff'
-  secondary-fixed-dim: '#d2bbff'
-  on-secondary-fixed: '#25005a'
-  on-secondary-fixed-variant: '#5a00c6'
-  tertiary-fixed: '#ffddb8'
-  tertiary-fixed-dim: '#ffb95f'
-  on-tertiary-fixed: '#2a1700'
-  on-tertiary-fixed-variant: '#653e00'
-  background: '#f9f9ff'
-  on-background: '#111c2d'
-  surface-variant: '#d8e3fb'
+  accent: '#ccff00'
+  on-accent: '#000000'
+  outline: '#000000'
 typography:
   display-lg:
-    fontFamily: Playfair Display
-    fontSize: 64px
-    fontWeight: '700'
-    lineHeight: '1.1'
-    letterSpacing: -0.02em
+    fontFamily: Space Grotesk
+    fontSize: 120px
+    fontWeight: '900'
+    lineHeight: '0.9'
+    letterSpacing: -0.05em
   display-lg-mobile:
-    fontFamily: Playfair Display
-    fontSize: 40px
-    fontWeight: '700'
-    lineHeight: '1.2'
+    fontFamily: Space Grotesk
+    fontSize: 38px
+    fontWeight: '900'
+    lineHeight: '0.9'
+    letterSpacing: -0.03em
   headline-lg:
-    fontFamily: Playfair Display
-    fontSize: 48px
-    fontWeight: '600'
-    lineHeight: '1.2'
-  headline-lg-mobile:
-    fontFamily: Playfair Display
-    fontSize: 32px
-    fontWeight: '600'
-    lineHeight: '1.3'
+    fontFamily: Space Grotesk
+    fontSize: 64px
+    fontWeight: '900'
+    lineHeight: '0.9'
   headline-md:
-    fontFamily: Playfair Display
-    fontSize: 32px
-    fontWeight: '600'
-    lineHeight: '1.3'
+    fontFamily: Space Grotesk
+    fontSize: 48px
+    fontWeight: '900'
+    lineHeight: '1.1'
+  headline-sm:
+    fontFamily: Space Grotesk
+    fontSize: 28px
+    fontWeight: '900'
+    lineHeight: '1.2'
   body-lg:
-    fontFamily: Plus Jakarta Sans
-    fontSize: 18px
-    fontWeight: '400'
-    lineHeight: '1.6'
-  body-md:
-    fontFamily: Plus Jakarta Sans
-    fontSize: 16px
-    fontWeight: '400'
-    lineHeight: '1.6'
-  label-lg:
-    fontFamily: Plus Jakarta Sans
-    fontSize: 14px
-    fontWeight: '600'
+    fontFamily: Space Grotesk
+    fontSize: 20px
+    fontWeight: '700'
     lineHeight: '1.4'
-    letterSpacing: 0.05em
+  body-md:
+    fontFamily: Space Grotesk
+    fontSize: 16px
+    fontWeight: '700'
+    lineHeight: '1.4'
+  label-lg:
+    fontFamily: JetBrains Mono
+    fontSize: 16px
+    fontWeight: '700'
+    lineHeight: '1.4'
+    letterSpacing: 0.02em
   label-sm:
-    fontFamily: Plus Jakarta Sans
+    fontFamily: JetBrains Mono
     fontSize: 12px
     fontWeight: '700'
-    lineHeight: '1.4'
-    letterSpacing: 0.08em
+    lineHeight: '1.2'
+    letterSpacing: 0.05em
 rounded:
-  sm: 0.5rem
-  DEFAULT: 1rem
-  md: 1.5rem
-  lg: 2rem
-  xl: 3rem
+  none: '0'
+  DEFAULT: '0'
+  sm: '0'
+  md: '0'
+  lg: '0'
+  xl: '0'
   full: 9999px
 spacing:
   base: 8px
@@ -111,74 +76,132 @@ spacing:
   md: 24px
   lg: 48px
   xl: 80px
-  container-margin: 32px
   gutter: 24px
+  container-margin: 32px
+  section-padding-mobile: 64px
+  section-padding-desktop: 120px
 ---
 
-## Brand & Style
+# Design System: Pragati Ranjan — Portfolio (Neon Brutalist)
 
-This design system expresses a personality of **Vibrant Serenity**. It moves away from washed-out aesthetics toward a high-energy, high-fashion editorial feel. The target audience is modern, design-conscious consumers in the lifestyle, boutique travel, or wellness spaces who appreciate elegance paired with a confident visual punch.
+## 1. Visual Theme & Atmosphere
 
-The style is a fusion of **Minimalism** and **Glassmorphism**, characterized by vast white space, crisp high-contrast typography, and translucent layers. By saturating the signature mints and lavenders, we create a UI that feels "alive" and premium rather than merely decorative. Every element should evoke a sense of freshness, clarity, and intentional luxury.
+This is an unapologetic **Neo-Brutalist** personal portfolio: loud, structural, and engineered to feel like raw, exposed machinery rather than a polished marketing surface. The canvas is pure white (`#ffffff`) overlaid with a faint dotted **grid background**, and everything sits inside heavy black scaffolding — 4px to 8px solid black borders, hard offset drop-shadows (no blur), and zero corner rounding anywhere. A single high-voltage **neon chartreuse** (`#ccff00`) is the only chromatic accent, used as the electric punctuation against an otherwise black-and-white world. The result reads as confident, technical, and slightly defiant — the visual equivalent of a systems engineer who scales things to millions of users and wants you to know it.
 
-## Colors
+The mood is **high-contrast and kinetic**. Type is set in tightly tracked, heavyweight (900) uppercase Space Grotesk at near-billboard sizes (up to 120px), broken up by monospace JetBrains Mono labels that evoke a terminal. Motion is deliberate and mechanical: cards physically shift on hover (translating toward the cursor while their shadow grows), buttons "press" into the page on active, and a perpetual marquee ticker scrolls system-status text along the bottom edge. Nothing is soft, gradient, or apologetic — depth comes from flat geometry and stacked black planes, not from light or transparency. Generous macro-spacing (64px on mobile, 120px on desktop between sections) keeps the loudness legible rather than chaotic.
 
-The palette is anchored by highly saturated pastels that provide functional weight and visual distinction.
+## 2. Color Palette & Roles
 
-- **Primary (Vivid Mint):** A deep, punchy mint used for primary actions and brand identifiers. It has enough chroma to remain legible and authoritative against light backgrounds.
-- **Secondary (Rich Lavender):** A saturated purple-blue used for secondary interactions, accents, and categorization.
-- **Tertiary (Zesty Amber):** Used sparingly for highlights, alerts, or unique call-outs to provide a warm counterpoint to the cool mint and lavender.
-- **Neutral:** A deep slate charcoal for typography to ensure AA+ accessibility.
-- **Surface:** A rich, warm cream rather than a sterile white, providing a "paper-like" editorial backdrop that makes the mint and lavender colors "pop."
+The palette is intentionally minimal — three values plus their inversions. Restraint is the point: one accent, deployed like a highlighter.
 
-## Typography
+### Primary Foundation
+- **Paper White** `#ffffff` — Page background, card surfaces, navbar. The default canvas.
+- **Ink Black** `#000000` — The structural color. Every border, shadow, and inverted panel. Used as a full surface (`bg-black`) for high-emphasis blocks like quotes and the contact section.
 
-The typography system relies on a high-contrast pairing: **Playfair Display** for expressive, authoritative headlines and **Plus Jakarta Sans** for clear, modern functional text.
+### Accent & Interactive
+- **Neon Chartreuse** `#ccff00` — The signature. Primary buttons, badges/chips, hover-fill highlights, accent cards, text-selection color, marquee text, and inline text highlighters (`bg-accent` behind words). On black panels it becomes the text color (`text-accent`) for maximum voltage.
 
-To maintain the editorial feel, use tight tracking for large display headlines and generous tracking for small labels. Headlines should utilize the italic variants of Playfair Display for emphasis or to break the rhythm of dense text. Body text should prioritize readability with a slightly increased line height (1.6) to allow the "bloom" of the layout to breathe.
+### Typography & Text Hierarchy
+- **Ink Black** `#000000` — Default body and heading text on white.
+- **Paper White** `#ffffff` — Text on black/inverted panels.
+- **Neon Chartreuse** `#ccff00` — Accent text reserved for headings inside black panels and the marquee.
 
-## Layout & Spacing
+### Functional States
+There is no separate success/error/warning palette. State is communicated structurally and through the accent: hover fills elements with chartreuse, the contact form's "submitted" confirmation uses a black `check_circle` glyph on the accent card. Disabled/muted states are simply rendered in plain black without the accent.
 
-This design system uses a **Fluid Grid** model with high-volume margins to emphasize the minimalist aesthetic.
+> Note: there is one translucent usage — the Experience section background is `rgba(204,255,0,0.10)`, a 10%-opacity wash of the accent to subtly tint that band off-white.
 
-- **Desktop:** 12-column grid with 24px gutters and 80px side margins.
-- **Tablet:** 8-column grid with 24px gutters and 48px side margins.
-- **Mobile:** 4-column grid with 16px gutters and 24px side margins.
+## 3. Typography Rules
 
-Spacing follows an 8px rhythm but utilizes "macro-spacing" (64px+) between major sections to prevent the vivid colors from feeling cluttered. Content should feel "unstructured" within the grid, often breaking the vertical rhythm to create a more organic, blooming flow.
+Two families, sharply role-separated:
 
-## Elevation & Depth
+- **Space Grotesk** — the voice. A geometric grotesque used for all display, headline, and body text. Almost always **uppercase**, **font-weight 900 (black)**, with tight negative tracking on large display sizes (`-0.05em`) for a dense, poster-like punch. Body copy stays bold (700) rather than regular, keeping the whole page heavy.
+- **JetBrains Mono** — the machine. A monospace used exclusively for labels, captions, metadata (dates, role tags, metrics), eyebrows, and the marquee. Reinforces the terminal/engineering identity. Typically uppercase, weight 700, with positive letter-spacing (`0.02em`–`0.05em`).
 
-Depth is achieved through **Glassmorphism** and **Tinted Ambient Shadows**. 
+### Hierarchy & Weights
+- **Display (Hero H1):** 38px (mobile) → up to 120px (desktop), weight 900, line-height 0.9, tracking −0.03em to −0.05em, uppercase. Often wrapped with inline `bg-black text-white` or `bg-accent` highlight spans.
+- **Headline LG (section titles):** ~48–64px, weight 900, line-height 0.9–1.1, uppercase. Frequently italic and/or set on an inline `bg-accent` block.
+- **Headline SM (card titles):** ~28px, weight 900, line-height 1.2, uppercase.
+- **Body:** 16–20px Space Grotesk, weight 700 (bold), line-height ~1.4 / `leading-snug`.
+- **Labels / metadata:** 12–16px JetBrains Mono, weight 700, uppercase, wide tracking (`tracking-widest` on the smallest eyebrows).
 
-Instead of neutral grey shadows, use low-opacity shadows that inherit the color of the primary or secondary palette (e.g., a subtle Mint-tinted shadow for mint-colored cards). This increases the perception of color saturation. 
+### Spacing Principles
+Display headlines use crushed line-height (0.9) and negative tracking to read as dense graphic blocks. Mono labels do the opposite — wide tracking and uppercase for a stamped, technical feel. Body text relaxes to `leading-snug` for readability without losing weight. Emphasis is created not by italics or color alone but by wrapping words in accent or black highlight spans, or underlining with a thick `decoration-4`/`decoration-8` accent rule.
 
-Surface layers should utilize backdrop blurs (20px-40px) and semi-transparent fills (80-90% opacity) to allow the background colors to bleed through, maintaining the "soft" feel while the content remains high-contrast. Use thin, 1px inner borders with a high-opacity version of the surface color to define glass edges.
+## 4. Component Stylings
 
-## Shapes
+All components share three brutalist invariants: **no border-radius**, **solid black borders (4px default)**, and **hard offset shadows** (`Npx Npx 0 0 #000` — zero blur).
 
-The shape language is strictly **Pill-shaped (Level 3)**. This softness balances the increased color saturation and the sharp serifs of Playfair Display. 
+### Buttons (`.brutalist-btn`)
+- Accent (`#ccff00`) fill, 4px black border, Space Grotesk weight 900 uppercase.
+- Shadow: `4px 4px 0 #000` mobile → `6px 6px 0 #000` desktop.
+- **Hover:** translates `-2px,-2px` while shadow grows to `8px 8px` — the button lifts toward you.
+- **Active:** translates `+4px,+4px` and shadow collapses to `0 0` — it physically presses into the page.
+- Transitions are fast and snappy (`0.1s ease`), never eased-soft.
 
-Every interactive element—from buttons and input fields to chips and images—should utilize maximum corner radii. When items are stacked (like list items), they should feel like smooth, organic pebbles. Avoid hard angles entirely to maintain the approachable, "blooming" nature of the design.
+### Cards & Containers (`.brutalist-card` / `.brutalist-card-accent`)
+- White (or accent) fill, 4px black border, **no rounding**.
+- Shadow: `6px 6px 0 #000` mobile → `10px 10px 0 #000` desktop.
+- **Hover (desktop):** translate `-4px,-4px`, shadow grows to `14px 14px` — the lift is exaggerated versus buttons.
+- `brutalist-card-accent` is the same object in chartreuse, used for the pull-quote, education block, and contact form.
+- Generous internal padding (24px mobile → 40–48px desktop). Some cards are tilted (`rotate-3`, `rotate-2`) for deliberate off-grid energy.
 
-## Components
+### Navigation
+- Fixed top bar, white, with a 4px black bottom border. Brand wordmark in tight uppercase black Space Grotesk.
+- Desktop links: mono, uppercase, weight 900; **hover fills the link with accent** (`hover:bg-accent`).
+- A persistent accent "Quick Connect" `brutalist-btn` anchors the right side.
+- Mobile: a bordered hamburger toggles a full-width dropdown of links, each separated by 2px black dividers, with accent hover fills.
 
-### Buttons
-- **Primary:** Solid Vivid Mint fill with white text. High-contrast and pill-shaped.
-- **Secondary:** Lavender-tinted glass background with Rich Lavender text and a 1.5px Lavender border.
-- **Hover States:** Increase saturation by 10% and apply a soft, color-matched glow.
+### Inputs & Forms
+- 4px black border, white fill, bold black text, **no rounding**, no focus ring (`focus:ring-0`).
+- **Focus behavior:** the field background flips to accent (`focus:bg-accent`) instead of glowing — state change is a flat color swap.
+- Labels are uppercase mono, weight 900. Submission is client-side, producing a `mailto:` link.
 
-### Cards
-- Surfaces use the Cream base or a high-transparency Glassmorphic effect.
-- Padding should be generous (min 32px) to ensure content doesn't feel cramped within the rounded corners.
+### Domain-Specific Components
+- **Badges / chips / metrics:** small bordered rectangles. Metric tags invert (`bg-black text-accent`) for emphasis; tech-stack tags stay `bg-white` bordered; period/status tags use `bg-accent`.
+- **Bullet markers:** a 2px-bordered `8px` accent square, never a dot.
+- **Marquee ticker:** fixed to the bottom, black bar with a 4px accent top border, scrolling chartreuse mono uppercase status text (`SYSTEM STABLE /// SCALING REAL-TIME ///…`) on a 20s linear loop.
+- **Imagery:** photos and project shots render `grayscale` by default and animate to full color on hover — keeping the palette monochrome until interaction.
+- **Grid background (`.grid-bg`):** a radial-dot pattern (`#000` 1px dots on a 32px grid) behind the hero for a technical-paper texture.
 
-### Inputs & Fields
-- Pill-shaped with a 1.5px border in a muted version of the secondary color. 
-- On focus, the border transitions to the Primary Mint with a subtle outer glow.
+## 5. Layout Principles
 
-### Chips & Tags
-- Small, fully rounded elements using the Secondary (Lavender) or Tertiary (Amber) colors with high-contrast text. Use these to add "pops" of color to otherwise neutral sections.
+### Grid & Structure
+- Max content width: **1200px**, centered, with `px-gutter` (24px) horizontal padding.
+- Sections use a **12-column** CSS grid on desktop (`md:grid-cols-12`) collapsing to a single column on mobile. Hero is 8/4 (content/visual); About is 5/7 (sticky portrait / narrative); Projects uses an asymmetric editorial layout (8-col hero project, 4-col offset secondary nudged down with `mt-24`, then a full-width 12-col feature).
+- Section dividers are structural: thick `border-y-8` / `border-b-8` black rules between bands rather than whitespace alone.
 
-### Lists
-- Use horizontal dividers that fade out at the edges (radial gradient) to maintain the airy, floating aesthetic. 
-- Icons should be monoline and utilize the primary color.
+### Whitespace Strategy
+- Base rhythm is an **8px** scale. Section padding jumps to macro values — **64px mobile / 120px desktop** vertically — so the heavy type and loud accent have room to breathe.
+- Internal card padding is generous (24→48px). Gaps between grid items scale 6→12 (24–48px).
+
+### Alignment & Visual Balance
+- Predominantly **left-aligned**, anchored by thick left-border rules (`border-l-8`) on section headers that act as typographic margins.
+- The Contact section is the deliberate exception — centered on a full black band with accent top/bottom borders for a climactic, high-contrast finish.
+- Asymmetry is intentional: offset columns, rotated cards, and inline highlight spans break the grid to create kinetic, off-balance energy.
+
+### Responsive Behavior & Touch
+- **Mobile-first** via Tailwind `md:` breakpoints (768px primary cutoff). Type, padding, and shadow depth all scale up at `md`.
+- Hover lift/press effects are gated behind `@media (min-width: 768px)` — touch devices get the flat resting state without phantom hovers.
+- Multi-column grids collapse to single column; the hero's right-hand terminal visual and the scroll indicator are hidden on small screens. Touch targets stay chunky (bordered, padded) by default.
+
+## 6. Design System Notes for Stitch Generation
+
+### Language to Use
+Describe screens as: "neo-brutalist", "high-contrast black and white with a single neon chartreuse (#ccff00) accent", "thick 4px black borders, zero corner radius, hard offset drop-shadows with no blur", "heavyweight uppercase Space Grotesk display type with tight negative tracking", "monospace JetBrains Mono labels", "flat geometric depth", "kinetic hover lifts and press-down active states". Avoid: gradients, soft shadows, rounded corners, glassmorphism, pastel anything.
+
+### Color References
+- **Paper White** `#ffffff` — backgrounds/surfaces
+- **Ink Black** `#000000` — borders, shadows, inverted panels, default text
+- **Neon Chartreuse** `#ccff00` — the sole accent: buttons, chips, highlights, hover fills, selection
+
+### Component Prompts
+- *"A brutalist card: white fill, 4px solid black border, no rounding, a hard 10px×10px black offset shadow with zero blur. On hover it shifts up-left 4px and the shadow grows to 14px. Generous 40px padding. Title in 28px uppercase black-weight Space Grotesk."*
+- *"A neon-chartreuse pill-free button: solid #ccff00 fill, 4px black border, uppercase black-weight Space Grotesk label, 6px black offset shadow; presses into the page on click (shadow collapses to zero)."*
+- *"A fixed top navbar, white with a 4px black bottom border; brand wordmark left in tight uppercase, monospace nav links that fill solid chartreuse on hover, and a chartreuse CTA button on the right."*
+
+### Incremental Iteration
+- Keep the accent **rare** — it loses voltage if overused; default to black/white and let chartreuse punctuate.
+- When adding emphasis, prefer inline highlight spans (`bg-accent` or `bg-black text-white` behind words) and thick underline rules over introducing new colors.
+- Maintain the hover-lift / active-press shadow choreography on every interactive element for consistency.
+- Imagery should default to grayscale and reveal color on hover to preserve the monochrome system.
