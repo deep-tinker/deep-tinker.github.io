@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git From The Inside Out — Build Your Own Version Control</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icon.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== Neo-brutalist design system (white / black / #ccff00) ===== */
+  :root{
+    --bg:#ffffff; --ink:#000000; --accent:#ccff00; --muted:#555555;
+    --dark:#000000;            /* inverted code/terminal surfaces */
+    --green:#16a34a; --red:#dc2626;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Space Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --sh:6px 6px 0 0 #000; --sh-sm:4px 4px 0 0 #000;
+    /* legacy aliases (old inline styles map onto the brutalist palette) */
+    --txt:#000; --dim:#555; --border:#000; --panel:#fff; --panel2:#f1f1f1;
+    --acc:#000; --acc2:#000; --orange:#000; --yellow:#caa700;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:16px}
+  a{color:var(--ink);text-decoration:underline;text-decoration-thickness:2px;font-weight:700}
+  a:hover{background:var(--accent)}
+  /* italics slant into following upright punctuation — add a hair of trailing space */
+  em,i{font-style:italic;padding-right:.08em}
+  code,kbd{font-family:var(--mono);background:#f1f1f1;border:2px solid var(--ink);padding:0 5px;border-radius:0;font-size:.85em;color:var(--ink);font-weight:700}
+  h1,h2,h3{line-height:1.2}
+  h2{font-size:1.85rem;margin:.1em 0 .5em;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;
+    display:inline-block;border-bottom:8px solid var(--accent);padding-bottom:.08em}
+  h3{color:var(--ink);margin:1.6em 0 .4em;font-size:1.18rem;font-weight:700;text-transform:uppercase}
+
+  /* ===== Header ===== */
+  header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;
+    padding:12px 20px;background:#fff;border-bottom:4px solid var(--ink)}
+  .brand{font-weight:700;font-size:1.05rem;text-transform:uppercase;letter-spacing:-.02em;white-space:nowrap}
+  .brand b{background:var(--accent);padding:0 5px;border:2px solid var(--ink)}
+  .stats{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .stat{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;text-transform:uppercase;font-family:var(--mono)}
+  .stat b{font-variant-numeric:tabular-nums}
+  .ring{--p:0;width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);
+    background:conic-gradient(var(--accent) calc(var(--p)*1%), #fff 0);
+    display:grid;place-items:center;font-size:.6rem;font-weight:700}
+  .ring span{width:28px;height:28px;border-radius:50%;background:#fff;display:grid;place-items:center;border:1px solid var(--ink)}
+  .btn{background:#fff;border:3px solid var(--ink);color:var(--ink);padding:6px 12px;box-shadow:var(--sh-sm);
+    border-radius:0;cursor:pointer;font-size:.78rem;font-family:var(--sans);font-weight:700;text-transform:uppercase;transition:.08s}
+  .btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 #000;background:var(--accent)}
+  .btn:active{transform:translate(2px,2px);box-shadow:0 0 0 0 #000}
+  .btn.primary{background:var(--accent)}
+  .flame.on{filter:drop-shadow(0 0 4px var(--accent))}
+
+  /* ===== Layout ===== */
+  .wrap{display:flex;max-width:1280px;margin:0 auto}
+  nav{width:280px;flex-shrink:0;padding:18px 10px 60px;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;border-right:4px solid var(--ink)}
+  nav .part{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--ink);margin:18px 12px 6px;font-weight:700;font-family:var(--mono);background:var(--accent);display:inline-block;padding:2px 6px}
+  nav a{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:0;color:var(--ink);
+    text-decoration:none;font-size:.85rem;font-weight:600;cursor:pointer;border:2px solid transparent}
+  nav a:hover{background:#f1f1f1;border-color:var(--ink)}
+  nav a.active{background:var(--accent);border-color:var(--ink)}
+  nav a .dot{width:16px;height:16px;border-radius:0;border:2px solid var(--ink);flex-shrink:0;display:grid;place-items:center;font-size:.6rem;background:#fff}
+  nav a.done .dot{background:var(--ink);color:var(--accent)}
+  main{flex:1;min-width:0;padding:30px 42px 120px;max-width:900px}
+
+  .lesson-tag{font-size:.72rem;letter-spacing:1px;text-transform:uppercase;color:var(--ink);font-weight:700;font-family:var(--mono);background:var(--accent);display:inline-block;padding:2px 7px;border:2px solid var(--ink)}
+  p{margin:.7em 0}
+  .lead{font-size:1.08rem;color:#222}
+  ul,ol{padding-left:22px} li{margin:.3em 0} li::marker{color:var(--ink)}
+  ul{list-style:square}
+  .callout{border:3px solid var(--ink);border-left:10px solid var(--ink);background:#fff;padding:13px 16px;border-radius:0;margin:1.3em 0;box-shadow:var(--sh-sm)}
+  .callout.aha{background:var(--accent);border-left-color:var(--ink)}
+  .callout.warn{border-left-color:var(--accent)}
+  .callout .k{font-weight:700;color:var(--ink);display:block;margin-bottom:3px;font-size:.76rem;letter-spacing:.5px;text-transform:uppercase;font-family:var(--mono)}
+  .cliff{margin-top:2.4em;padding:16px 18px;border:4px dashed var(--ink);border-radius:0;background:#fff}
+  .cliff .k{color:var(--ink);font-weight:700;font-size:.76rem;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);background:var(--accent);padding:2px 6px}
+
+  table{border-collapse:collapse;width:100%;margin:1em 0;font-size:.9rem;border:3px solid var(--ink)}
+  th,td{border:2px solid var(--ink);padding:8px 11px;text-align:left}
+  th{background:var(--accent);color:var(--ink);text-transform:uppercase;font-weight:700;font-family:var(--mono);font-size:.82rem}
+
+  /* ===== Widgets ===== */
+  .widget{margin:1.7em 0;border:3px solid var(--ink);border-radius:0;overflow:hidden;background:#fff;box-shadow:var(--sh)}
+  .widget-head{padding:9px 14px;background:#fff;font-size:.74rem;letter-spacing:.5px;color:var(--ink);font-family:var(--mono);
+    display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--ink);font-weight:700}
+  .widget-head .lbl{margin-right:auto;text-transform:uppercase;font-weight:700}
+  .dots{display:flex;gap:5px} .dots i{width:11px;height:11px;border-radius:0;border:2px solid var(--ink);display:inline-block}
+  .dots i:nth-child(1){background:var(--accent)}.dots i:nth-child(2){background:#fff}.dots i:nth-child(3){background:var(--ink)}
+
+  /* terminal — inverted (black) console block */
+  .term{font-family:var(--mono);font-size:.85rem;background:var(--dark)}
+  .term-out{padding:12px 14px;min-height:120px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;color:#e8e8e8}
+  .term-out .cmd{color:var(--accent)} .term-out .cmd::before{content:"$ ";color:#888}
+  .term-out .err{color:#ff6b6b} .term-out .info{color:#aaa} .term-out .hl{color:var(--accent)}
+  .term-in{display:flex;align-items:center;border-top:2px solid #333;padding:6px 10px;background:#000}
+  .term-in span{color:#888;margin-right:6px}
+  .term-in input{flex:1;background:none;border:none;outline:none;color:var(--accent);font-family:var(--mono);font-size:.85rem}
+  .term-graph{border-top:3px solid var(--ink);padding:10px;background:#fff;overflow-x:auto}
+  .term-graph svg{display:block}
+  .chiprow{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-top:2px solid #333;background:#000}
+  .chip{font-family:var(--mono);font-size:.72rem;background:transparent;border:2px solid var(--accent);color:var(--accent);
+    padding:3px 8px;border-radius:0;cursor:pointer;font-weight:700}
+  .chip:hover{background:var(--accent);color:#000}
+
+  /* stepper — white diagram canvas */
+  .stepper svg{width:100%;height:auto;display:block;background:#fff}
+  .step-cap{padding:11px 16px;font-size:.92rem;min-height:46px;border-top:3px solid var(--ink)}
+  .step-ctrl{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:3px solid var(--ink);background:#fff}
+  .step-ctrl .spacer{margin-left:auto;font-size:.74rem;color:var(--muted);font-family:var(--mono)}
+  .pips{display:flex;gap:5px}.pips i{width:9px;height:9px;border-radius:0;border:1.5px solid var(--ink);background:#fff}.pips i.on{background:var(--ink)}
+
+  /* quiz */
+  .quiz{padding:15px 16px}
+  .quiz .q{font-weight:700;margin-bottom:10px}
+  .opt{display:block;width:100%;text-align:left;background:#fff;border:3px solid var(--ink);color:var(--ink);
+    padding:10px 13px;border-radius:0;margin:8px 0;cursor:pointer;font-size:.9rem;font-weight:600;transition:.08s;font-family:inherit;box-shadow:var(--sh-sm)}
+  .opt:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 0 #000;background:var(--accent)}
+  .opt.correct{background:var(--accent);color:var(--ink);transform:none;box-shadow:var(--sh-sm)}
+  .opt.wrong{background:var(--red);color:#fff;transform:none;box-shadow:var(--sh-sm)}
+  .opt:disabled{cursor:default}
+  .quiz-type{display:flex;gap:8px;margin:8px 0}
+  .quiz-type input{flex:1;background:#fff;border:3px solid var(--ink);color:var(--ink);font-family:var(--mono);font-weight:700;
+    padding:9px 11px;border-radius:0;font-size:.85rem;outline:none}
+  .quiz-type input:focus{background:#fafff0}
+  .feedback{margin-top:10px;font-size:.88rem;padding:10px 12px;border-radius:0;display:none;border:3px solid var(--ink)}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--accent);color:var(--ink)} .feedback.no{background:#ffd7d4;color:var(--ink)}
+
+  /* playground — inverted (black) code editor */
+  .pg-code{width:100%;background:var(--dark);border:none;color:#e8e8e8;font-family:var(--mono);font-size:.84rem;
+    padding:12px 14px;resize:vertical;min-height:120px;outline:none;line-height:1.5;display:block}
+  .pg-out{border-top:2px solid #333;padding:10px 14px;font-family:var(--mono);font-size:.82rem;background:#000;
+    white-space:pre-wrap;color:#aaa;min-height:24px;max-height:240px;overflow:auto}
+  .pg-out .v{color:var(--accent)} .pg-out .e{color:#ff6b6b}
+
+  /* predict */
+  .predict{border:3px solid var(--ink);border-left:10px solid var(--accent);border-radius:0;padding:13px 15px;margin:1.4em 0;background:#fff;box-shadow:var(--sh-sm)}
+  .predict .k{color:var(--ink);font-weight:700;font-size:.74rem;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono)}
+  .reveal{display:none;margin-top:10px;padding-top:10px;border-top:3px solid var(--ink)}
+  .reveal.show{display:block}
+
+  .complete-bar{display:flex;align-items:center;gap:14px;margin:2.5em 0 1em;padding:16px;border-radius:0;
+    background:#fff;border:3px solid var(--ink);box-shadow:var(--sh)}
+  .complete-bar .txt{margin-right:auto}
+  .pagebtns{display:flex;justify-content:space-between;margin-top:30px;gap:12px}
+
+  /* modal (flashcards) */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:100}
+  .modal.show{display:grid}
+  .card{width:min(460px,92vw);background:#fff;border:4px solid var(--ink);border-radius:0;padding:24px;text-align:center;box-shadow:10px 10px 0 0 #000}
+  .card .front{font-size:1.15rem;margin:14px 0 20px;min-height:60px;display:grid;place-items:center;font-weight:600}
+  .card .back{display:none;color:var(--accent);font-family:var(--mono);font-size:.95rem;margin-bottom:18px;padding:12px;background:var(--dark);border-radius:0}
+  .card .back.show{display:block}
+  .card .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .badge{font-size:.68rem;background:var(--accent);border:2px solid var(--ink);padding:3px 9px;border-radius:0;color:var(--ink);font-family:var(--mono);font-weight:700;text-transform:uppercase}
+
+  .hero{text-align:center;padding:30px 0 10px}
+  .hero h2{font-size:2.4rem;border-bottom-width:10px}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0}
+  .pill{font-size:.74rem;background:#fff;border:2px solid var(--ink);padding:6px 12px;border-radius:0;color:var(--ink);font-weight:700;font-family:var(--mono);text-transform:uppercase}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:1.4em 0}
+  @media(max-width:860px){.wrap{flex-direction:column}nav{width:100%;height:auto;position:static;border-right:none;border-bottom:4px solid var(--ink)}main{padding:22px 18px 100px}.grid2{grid-template-columns:1fr}.stats .stat.hideable{display:none}}
+  ::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-thumb{background:var(--ink);border-radius:0;border:2px solid #fff}::-webkit-scrollbar-track{background:#f1f1f1}
+</style>
+</head>
+<body>
+<header>
+  <a href="/blog" class="btn" style="text-decoration:none" title="Back to blog">←</a>
+  <div class="brand">git <b>// inside out</b></div>
+  <div class="stats">
+    <div class="stat hideable" title="Experience points">⚡ <b id="xp">0</b> XP</div>
+    <div class="stat hideable" title="Day streak">🔥 <b id="streak">0</b></div>
+    <button class="btn" id="reviewBtn">🔁 Review <b id="dueCount" style="color:var(--orange)">0</b></button>
+    <div class="ring" id="ring"><span id="ringTxt">0%</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="modal" id="cardModal">
+  <div class="card">
+    <span class="badge" id="cardBox">box 1</span>
+    <div class="front" id="cardFront"></div>
+    <div class="back" id="cardBack"></div>
+    <div class="row" id="cardRow">
+      <button class="btn primary" id="cardFlip">Flip card</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   PART A — VERIFIED GIT CRYPTO CORE
+   Pure-JS SHA-1 over bytes. Produces hashes identical to real `git`.
+   (Verified against: git hash-object, git write-tree.)
+   ========================================================================== */
+function sha1bytes(bytes){
+  const ml=bytes.length*8, withOne=bytes.length+1;
+  const padLen=((56-(withOne%64))+64)%64, total=withOne+padLen+8;
+  const msg=new Uint8Array(total); msg.set(bytes,0); msg[bytes.length]=0x80;
+  const dv=new DataView(msg.buffer);
+  dv.setUint32(total-4, ml>>>0, false);
+  dv.setUint32(total-8, Math.floor(ml/0x100000000), false);
+  let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+  const w=new Uint32Array(80), rotl=(n,s)=>(n<<s)|(n>>>(32-s));
+  for(let i=0;i<total;i+=64){
+    for(let j=0;j<16;j++) w[j]=dv.getUint32(i+j*4,false);
+    for(let j=16;j<80;j++) w[j]=rotl(w[j-3]^w[j-8]^w[j-14]^w[j-16],1);
+    let a=h0,b=h1,c=h2,d=h3,e=h4;
+    for(let j=0;j<80;j++){
+      let f,k;
+      if(j<20){f=(b&c)|(~b&d);k=0x5A827999;}
+      else if(j<40){f=b^c^d;k=0x6ED9EBA1;}
+      else if(j<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;}
+      else{f=b^c^d;k=0xCA62C1D6;}
+      const t=(rotl(a,5)+f+e+k+w[j])>>>0;
+      e=d;d=c;c=rotl(b,30)>>>0;b=a;a=t;
+    }
+    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
+  }
+  const hx=n=>('00000000'+(n>>>0).toString(16)).slice(-8);
+  return hx(h0)+hx(h1)+hx(h2)+hx(h3)+hx(h4);
+}
+const enc=new TextEncoder();
+function utf8(s){return enc.encode(s);}
+function cat(...a){let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let p=0;for(const x of a){o.set(x,p);p+=x.length;}return o;}
+function hex2bytes(h){const b=new Uint8Array(h.length/2);for(let i=0;i<b.length;i++)b[i]=parseInt(h.substr(i*2,2),16);return b;}
+// sha1( "<type> <len>\0" + content ) — exactly what git does.
+function gitHashObject(type, contentBytes){
+  if(typeof contentBytes==='string') contentBytes=utf8(contentBytes);
+  return sha1bytes(cat(utf8(`${type} ${contentBytes.length}\0`), contentBytes));
+}
+function gitHashTree(entries){ // [{mode,name,hash}]
+  const s=[...entries].sort((a,b)=>a.name<b.name?-1:1), parts=[];
+  for(const e of s){ parts.push(utf8(`${e.mode} ${e.name}\0`)); parts.push(hex2bytes(e.hash)); }
+  return gitHashObject('tree', cat(...parts));
+}
+function short(h){return h?h.slice(0,7):'';}
+
+/* ============================================================================
+   PART B — MiniGit ENGINE
+   An in-memory version-control engine. Everything is objects + refs.
+   This SAME engine powers the simulated terminal in early lessons AND is the
+   thing you rebuild by hand in the capstone. (The big reveal: you've been
+   driving it the whole time.)
+   ========================================================================== */
+function MiniGit(){
+  const repo={
+    objects:new Map(),     // hash -> {type, ...}
+    refs:new Map(),        // 'refs/heads/main' -> commit hash
+    HEAD:'refs/heads/main',// either a ref path or {detached:hash}
+    work:new Map(),        // filename -> content (working directory)
+    index:new Map(),       // filename -> blob hash (staging area)
+    initialized:false,
+    clock:0,               // deterministic timestamp counter
+  };
+  const api={};
+  function store(type,content,extra){ const h=gitHashObject(type, typeof content==='string'?content:content); repo.objects.set(h,Object.assign({type,content},extra)); return h; }
+  function curBranch(){ return (typeof repo.HEAD==='string' && repo.HEAD.startsWith('refs/heads/'))?repo.HEAD.slice('refs/heads/'.length):null; }
+  function headCommit(){ if(typeof repo.HEAD==='object') return repo.HEAD.detached; return repo.refs.get(repo.HEAD)||null; }
+  function ancestors(h){ const seen=new Set(); const stk=h?[h]:[]; while(stk.length){const c=stk.pop(); if(!c||seen.has(c))continue; seen.add(c); const o=repo.objects.get(c); if(o&&o.parents)stk.push(...o.parents);} return seen; }
+
+  api.repo=repo;
+  api.init=()=>{ if(repo.initialized) return {info:'Reinitialized existing MiniGit repository'}; repo.initialized=true; repo.HEAD='refs/heads/main'; return {info:'Initialized empty MiniGit repository (branch: main)'}; };
+  api.writeFile=(name,content)=>{ repo.work.set(name,content); return {info:`wrote ${name}`}; };
+  api.add=(name)=>{
+    if(!repo.initialized) return {err:'not a git repository (run: git init)'};
+    let names = name==='.' ? [...repo.work.keys()] : [name];
+    if(name!=='.' && !repo.work.has(name)) return {err:`pathspec '${name}' did not match any files`};
+    for(const n of names){ const h=gitHashObject('blob', repo.work.get(n)); repo.objects.set(h,{type:'blob',content:repo.work.get(n)}); repo.index.set(n,h); }
+    return {info:`staged ${names.join(', ')}`};
+  };
+  api.commit=(msg)=>{
+    if(!repo.initialized) return {err:'not a git repository (run: git init)'};
+    if(repo.index.size===0) return {err:'nothing to commit (use "git add")'};
+    const entries=[...repo.index.entries()].map(([name,hash])=>({mode:'100644',name,hash}));
+    const tree=gitHashTree(entries);
+    repo.objects.set(tree,{type:'tree',entries});
+    const parent=headCommit();
+    const parents=parent?[parent]:[];
+    const ts=1700000000+(repo.clock++)*60;
+    const body=`tree ${tree}\n`+parents.map(p=>`parent ${p}\n`).join('')+`author You <you@local> ${ts} +0000\ncommitter You <you@local> ${ts} +0000\n\n${msg}\n`;
+    const h=gitHashObject('commit', body);
+    repo.objects.set(h,{type:'commit',tree,parents,message:msg,ts});
+    const br=curBranch();
+    if(br) repo.refs.set('refs/heads/'+br, h); else repo.HEAD={detached:h};
+    return {info:`[${br||'detached'} ${short(h)}] ${msg}`,hash:h};
+  };
+  api.branch=(name)=>{
+    if(!name){ const out=[...repo.refs.keys()].filter(k=>k.startsWith('refs/heads/')).map(k=>{const b=k.slice(11);return (b===curBranch()?'* ':'  ')+b;}).join('\n'); return {info:out||'(no branches yet — make a commit)'}; }
+    const c=headCommit(); if(!c) return {err:'cannot create branch before first commit'};
+    if(repo.refs.has('refs/heads/'+name)) return {err:`branch '${name}' already exists`};
+    repo.refs.set('refs/heads/'+name,c); return {info:`created branch ${name} at ${short(c)}`};
+  };
+  api.checkout=(name,create)=>{
+    if(create){ const r=api.branch(name); if(r.err) return r; }
+    if(!repo.refs.has('refs/heads/'+name)) return {err:`pathspec '${name}' did not match`};
+    repo.HEAD='refs/heads/'+name;
+    // load tree into index/work (snapshot)
+    const c=headCommit(); repo.index.clear();
+    if(c){ const t=repo.objects.get(repo.objects.get(c).tree); if(t&&t.entries){ for(const e of t.entries){ repo.index.set(e.name,e.hash); const blob=repo.objects.get(e.hash); repo.work.set(e.name, blob?blob.content:''); } } }
+    return {info:`Switched to branch '${name}'`};
+  };
+  api.merge=(name)=>{
+    const target=repo.refs.get('refs/heads/'+name);
+    if(target===undefined) return {err:`merge: ${name} - not something we can merge`};
+    const cur=headCommit(); const br=curBranch();
+    if(!cur){ repo.refs.set(repo.HEAD,target); return {info:`fast-forward to ${short(target)}`}; }
+    if(cur===target) return {info:'Already up to date.'};
+    const ancCur=ancestors(cur);
+    if(ancCur.has(target)) return {info:'Already up to date.'};
+    const ancTarget=ancestors(target);
+    if(ancTarget.has(cur)){ // fast-forward
+      if(br) repo.refs.set('refs/heads/'+br,target); else repo.HEAD={detached:target};
+      return {info:`Fast-forward ${short(cur)}..${short(target)}`};
+    }
+    // true merge: new commit with two parents
+    const o=repo.objects.get(cur);
+    const ts=1700000000+(repo.clock++)*60;
+    const body=`tree ${o.tree}\nparent ${cur}\nparent ${target}\nauthor You <you@local> ${ts} +0000\ncommitter You <you@local> ${ts} +0000\n\nMerge branch '${name}'\n`;
+    const h=gitHashObject('commit',body);
+    repo.objects.set(h,{type:'commit',tree:o.tree,parents:[cur,target],message:`Merge branch '${name}'`,ts,merge:true});
+    if(br) repo.refs.set('refs/heads/'+br,h); else repo.HEAD={detached:h};
+    return {info:`Merge made by a three-way merge strategy. ${short(h)}`};
+  };
+  api.log=()=>{
+    let c=headCommit(); if(!c) return {info:'(no commits yet)'};
+    const lines=[]; const seen=new Set();
+    const stk=[c];
+    const order=[];
+    // simple: walk first-parent then others, collect unique, sort by ts desc
+    (function walk(h){ if(!h||seen.has(h))return; seen.add(h); order.push(h); const o=repo.objects.get(h); if(o&&o.parents) o.parents.forEach(walk); })(c);
+    order.sort((a,b)=>repo.objects.get(b).ts-repo.objects.get(a).ts);
+    for(const h of order){ const o=repo.objects.get(h); const refs=[...repo.refs.entries()].filter(([k,v])=>v===h).map(([k])=>k.slice(11)); const head=(headCommit()===h)?' (HEAD)':''; lines.push(`* ${short(h)}${refs.length?' ('+refs.join(', ')+')':''}${head} ${o.message}`); }
+    return {info:lines.join('\n')};
+  };
+  api.status=()=>{
+    if(!repo.initialized) return {err:'not a git repository'};
+    const br=curBranch()||'(detached)';
+    const staged=[...repo.index.keys()];
+    const untracked=[...repo.work.keys()].filter(f=>!repo.index.has(f) || gitHashObject('blob',repo.work.get(f))!==repo.index.get(f));
+    let s=`On branch ${br}\n`;
+    if(staged.length) s+='Changes to be committed:\n'+staged.map(f=>`  staged:    ${f}`).join('\n')+'\n';
+    const modified=untracked.filter(f=>repo.index.has(f));
+    const newfiles=untracked.filter(f=>!repo.index.has(f));
+    if(modified.length) s+='Changes not staged:\n'+modified.map(f=>`  modified:  ${f}`).join('\n')+'\n';
+    if(newfiles.length) s+='Untracked files:\n'+newfiles.map(f=>`  ${f}`).join('\n')+'\n';
+    if(!staged.length&&!untracked.length) s+='nothing to commit, working tree clean';
+    return {info:s.trim()};
+  };
+  api.catFile=(h)=>{
+    // accept short hashes
+    let full=h; if(!repo.objects.has(h)){ const m=[...repo.objects.keys()].filter(k=>k.startsWith(h)); if(m.length===1) full=m[0]; }
+    const o=repo.objects.get(full); if(!o) return {err:`Not a valid object name ${h}`};
+    if(o.type==='blob') return {info:o.content};
+    if(o.type==='tree') return {info:o.entries.map(e=>`${e.mode} blob ${e.hash}\t${e.name}`).join('\n')};
+    if(o.type==='commit') return {info:`tree ${o.tree}\n${o.parents.map(p=>'parent '+p).join('\n')}${o.parents.length?'\n':''}\n    ${o.message}`};
+    return {info:JSON.stringify(o)};
+  };
+  api.hashObject=(name)=>{ if(!repo.work.has(name)) return {err:`could not open '${name}'`}; return {info:gitHashObject('blob',repo.work.get(name))}; };
+  api.lsFiles=()=>({info:[...repo.index.keys()].join('\n')||'(index empty)'});
+  api.headCommit=headCommit; api.curBranch=curBranch; api.ancestors=ancestors;
+  return api;
+}
+
+/* ============================================================================
+   PART C — GRAPH RENDERER (SVG)  for the live terminal
+   ========================================================================== */
+function renderGraph(git){
+  const r=git.repo;
+  const commits=[];
+  const reach=new Set();
+  for(const v of r.refs.values()) for(const a of git.ancestors(v)) reach.add(a);
+  const hc=git.headCommit(); if(hc) for(const a of git.ancestors(hc)) reach.add(a);
+  for(const h of reach){ const o=r.objects.get(h); if(o&&o.type==='commit') commits.push(h); }
+  const MF='JetBrains Mono,monospace';
+  if(!commits.length) return `<svg width="240" height="40"><text x="10" y="24" fill="#000" font-family="${MF}" font-size="12" font-weight="700">no commits yet — git commit</text></svg>`;
+  // generation depth
+  const gen=new Map(); function g(h){ if(gen.has(h))return gen.get(h); const o=r.objects.get(h); const v=(!o||!o.parents||!o.parents.length)?0:1+Math.max(...o.parents.map(g)); gen.set(h,v); return v; }
+  commits.forEach(g);
+  commits.sort((a,b)=> gen.get(b)-gen.get(a) || r.objects.get(b).ts-r.objects.get(a).ts);
+  const rowH=46, x=60, r0=9; const H=commits.length*rowH+20, W=560;
+  const pos=new Map(); commits.forEach((h,i)=>pos.set(h, {x, y:20+i*rowH}));
+  let edges='', nodes='';
+  for(const h of commits){ const o=r.objects.get(h); const p=pos.get(h);
+    for(const par of (o.parents||[])){ const pp=pos.get(par); if(pp){ edges+=`<path d="M${p.x} ${p.y} C ${p.x} ${(p.y+pp.y)/2}, ${pp.x} ${(p.y+pp.y)/2}, ${pp.x} ${pp.y}" stroke="#000" stroke-width="2.5" fill="none"/>`; } }
+  }
+  for(const h of commits){ const o=r.objects.get(h); const p=pos.get(h);
+    const isHead=git.headCommit()===h; const merge=o.parents&&o.parents.length>1;
+    const refs=[...r.refs.entries()].filter(([k,v])=>v===h).map(([k])=>k.slice(11));
+    nodes+=`<circle cx="${p.x}" cy="${p.y}" r="${r0}" fill="${merge?'#ccff00':'#fff'}" stroke="#000" stroke-width="${isHead?4:2.5}"/>`;
+    nodes+=`<text x="${p.x+20}" y="${p.y-3}" fill="#000" font-family="${MF}" font-size="12" font-weight="700">${short(h)}</text>`;
+    nodes+=`<text x="${p.x+20}" y="${p.y+12}" fill="#555" font-family="${MF}" font-size="11">${esc(o.message).slice(0,42)}</text>`;
+    let lx=x-22;
+    const labels=refs.map(rf=>({t:rf,bg:'#fff'}));
+    if(isHead){ const cb=git.curBranch(); labels.unshift({t:'HEAD'+(cb?'':' (detached)'),bg:'#ccff00'}); }
+    labels.forEach((lab)=>{ const w=lab.t.length*6.4+12; lx-=w+6; nodes+=`<rect x="${lx}" y="${p.y-10}" width="${w}" height="20" rx="0" fill="${lab.bg}" stroke="#000" stroke-width="2"/><text x="${lx+w/2}" y="${p.y+4}" fill="#000" font-family="${MF}" font-size="10" font-weight="700" text-anchor="middle">${lab.t}</text>`; });
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${edges}${nodes}</svg>`;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ============================================================================
+   PART D — PERSISTENT STATE (progress, XP, streak, flashcards)
+   ========================================================================== */
+const LS='gitiio_v1';
+const State=(()=>{
+  let s; try{ s=JSON.parse(localStorage.getItem(LS))||{}; }catch(e){ s={}; }
+  s.done=s.done||{}; s.xp=s.xp||0; s.streak=s.streak||0; s.lastDay=s.lastDay||null; s.cards=s.cards||{};
+  function save(){ try{localStorage.setItem(LS,JSON.stringify(s));}catch(e){} }
+  function today(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+  function touchStreak(){ const t=today(); if(s.lastDay===t) return; const y=new Date(Date.now()-864e5); const yk=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate(); s.streak=(s.lastDay===yk)?s.streak+1:1; s.lastDay=t; save(); }
+  return {
+    s, save, touchStreak,
+    markDone(id,xp){ if(!s.done[id]){ s.done[id]=true; s.xp+=(xp||50); touchStreak(); save(); } },
+    isDone(id){return !!s.done[id];},
+    addCard(id,front,back){ if(!s.cards[id]) s.cards[id]={front,back,box:1,due:0}; save(); },
+    dueCards(){ const now=sessionTick; return Object.entries(s.cards).filter(([k,c])=>c.box<5 && c.due<=now); },
+    gradeCard(id,ok){ const c=s.cards[id]; if(!c)return; if(ok){c.box=Math.min(5,c.box+1);}else{c.box=1;} c.due=sessionTick+(ok?c.box:0); save(); },
+    reset(){ s.done={};s.xp=0;s.streak=0;s.lastDay=null;s.cards={}; save(); }
+  };
+})();
+let sessionTick=0; // advances as the learner studies, so spaced cards resurface within a session
+
+/* ============================================================================
+   PART E — WIDGET FACTORIES
+   ========================================================================== */
+let _wid=0; const uid=()=>'w'+(_wid++);
+
+// ---- Terminal widget ----
+function Terminal(opts){
+  opts=opts||{}; const id=uid(); const git=MiniGit();
+  if(opts.seed) opts.seed(git);
+  const chips=(opts.chips||[]).map(c=>`<span class="chip" data-cmd="${esc(c)}">${esc(c)}</span>`).join('');
+  const html=`<div class="widget term">
+    <div class="widget-head"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">simulated git terminal</span><span style="font-size:.7rem">${opts.note||'type real git commands'}</span></div>
+    <div class="term-out" id="${id}-out"></div>
+    <div class="term-in"><span>$</span><input id="${id}-in" autocomplete="off" spellcheck="false" placeholder="try: git init"></div>
+    <div class="chiprow">${chips}<span class="chip" data-cmd="help">help</span><span class="chip" data-cmd="clear">clear</span></div>
+    <div class="term-graph" id="${id}-graph"></div>
+  </div>`;
+  queueMicrotask(()=>{
+    const out=document.getElementById(id+'-out'), inp=document.getElementById(id+'-in'), gr=document.getElementById(id+'-graph');
+    const print=(t,cls)=>{ const d=document.createElement('div'); if(cls)d.className=cls; d.textContent=t; out.appendChild(d); out.scrollTop=out.scrollHeight; };
+    const drawGraph=()=>{ gr.innerHTML=renderGraph(git); };
+    function run(line){
+      print(line,'cmd'); sessionTick++;
+      const res=exec(line); if(res){ if(res.err)print(res.err,'err'); else if(res.info!==undefined && res.info!=='')print(res.info); }
+      drawGraph();
+    }
+    function exec(line){
+      const t=line.trim(); if(!t) return null;
+      if(t==='clear'){ out.innerHTML=''; return null; }
+      if(t==='help') return {info:'Commands:\n  git init | status | log\n  echo TEXT > FILE        (create a file)\n  git add FILE|.          git commit -m "msg"\n  git branch [name]       git checkout [-b] name\n  git merge name          git ls-files\n  git hash-object FILE     git cat-file -p HASH'};
+      let m;
+      if(m=t.match(/^echo\s+"?(.*?)"?\s*>\s*(\S+)$/)) return git.writeFile(m[2], m[1]+'\n');
+      if(!t.startsWith('git ')) return {err:`command not found: ${t.split(' ')[0]} (this sim only knows git + echo)`};
+      const a=t.slice(4).trim().split(/\s+/);
+      switch(a[0]){
+        case 'init': return git.init();
+        case 'status': return git.status();
+        case 'log': return git.log();
+        case 'ls-files': return git.lsFiles();
+        case 'add': return git.add(a[1]||'');
+        case 'commit':{ const mm=t.match(/-m\s+"([^"]*)"/)||t.match(/-m\s+'([^']*)'/); if(!mm) return {err:'commit needs -m "message"'}; return git.commit(mm[1]); }
+        case 'branch': return git.branch(a[1]);
+        case 'checkout': if(a[1]==='-b') return git.checkout(a[2],true); return git.checkout(a[1]);
+        case 'merge': return git.merge(a[1]);
+        case 'hash-object': return git.hashObject(a[a.length-1]);
+        case 'cat-file': return git.catFile(a[a.length-1]);
+        default: return {err:`git: '${a[0]}' is not supported in this sim`};
+      }
+    }
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ run(inp.value); inp.value=''; } });
+    document.getElementById(id).closest('.widget').querySelectorAll('.chip').forEach(ch=>{
+      ch.addEventListener('click',()=>{ inp.value=ch.dataset.cmd; inp.focus(); });
+    });
+    if(opts.autorun) opts.autorun.forEach(run);
+    drawGraph();
+  });
+  return html.replace('<div class="widget term">',`<div class="widget term" id="${id}">`);
+}
+
+// ---- Stepper widget (animated SVG scenes) ----
+function Stepper(frames){
+  const id=uid();
+  const html=`<div class="widget stepper" id="${id}">
+    <div class="widget-head"><span class="lbl">visualize</span><span style="font-size:.7rem">step through it →</span></div>
+    <div id="${id}-svg"></div>
+    <div class="step-cap" id="${id}-cap"></div>
+    <div class="step-ctrl">
+      <button class="btn" id="${id}-prev">‹ Prev</button>
+      <button class="btn primary" id="${id}-next">Next ›</button>
+      <button class="btn" id="${id}-play">▶ Play</button>
+      <div class="pips" id="${id}-pips"></div>
+      <span class="spacer" id="${id}-count"></span>
+    </div></div>`;
+  queueMicrotask(()=>{
+    let i=0,timer=null;
+    const svg=document.getElementById(id+'-svg'),cap=document.getElementById(id+'-cap'),count=document.getElementById(id+'-count'),pips=document.getElementById(id+'-pips');
+    pips.innerHTML=frames.map(()=>'<i></i>').join('');
+    function show(){ svg.innerHTML=frames[i].svg; cap.innerHTML=frames[i].cap; count.textContent=(i+1)+' / '+frames.length; [...pips.children].forEach((p,k)=>p.className=k===i?'on':''); }
+    document.getElementById(id+'-next').onclick=()=>{ i=Math.min(frames.length-1,i+1); show(); };
+    document.getElementById(id+'-prev').onclick=()=>{ i=Math.max(0,i-1); show(); };
+    document.getElementById(id+'-play').onclick=function(){ if(timer){clearInterval(timer);timer=null;this.textContent='▶ Play';return;} this.textContent='⏸ Pause'; const btn=this; timer=setInterval(()=>{ if(i>=frames.length-1){clearInterval(timer);timer=null;btn.textContent='▶ Play';return;} i++;show(); },1400); };
+    show();
+  });
+  return html;
+}
+
+// ---- Quiz widget ----
+function Quiz(items){ // items: {q, type:'mc'|'text', options?, answer, explain, card?:[front,back]}
+  const id=uid();
+  const blocks=items.map((it,qi)=>{
+    if(it.type==='text'){
+      return `<div class="quiz" data-qi="${qi}"><div class="q">${it.q}</div>
+        <div class="quiz-type"><input placeholder="type your answer…" data-input><button class="btn primary" data-check>Check</button></div>
+        <div class="feedback"></div></div>`;
+    }
+    const opts=it.options.map((o,oi)=>`<button class="opt" data-oi="${oi}">${o}</button>`).join('');
+    return `<div class="quiz" data-qi="${qi}"><div class="q">${it.q}</div>${opts}<div class="feedback"></div></div>`;
+  }).join('<hr style="border:none;border-top:1px solid var(--border)">');
+  const html=`<div class="widget" id="${id}"><div class="widget-head"><span class="lbl">✓ active recall</span><span style="font-size:.7rem">no peeking — guess first</span></div>${blocks}</div>`;
+  queueMicrotask(()=>{
+    document.querySelectorAll(`#${id} .quiz`).forEach(qz=>{
+      const it=items[+qz.dataset.qi]; const fb=qz.querySelector('.feedback');
+      function resolve(ok){
+        fb.className='feedback show '+(ok?'ok':'no'); fb.innerHTML=(ok?'✅ ':'❌ ')+it.explain;
+        if(it.card) State.addCard(id+'-'+qz.dataset.qi+(ok?'':'-x'), it.card[0], it.card[1]);
+        if(!ok && it.card) updateDue();
+      }
+      if(it.type==='text'){
+        const inp=qz.querySelector('[data-input]');
+        qz.querySelector('[data-check]').onclick=()=>{
+          const v=inp.value.trim().toLowerCase().replace(/\s+/g,' ');
+          const ans=(Array.isArray(it.answer)?it.answer:[it.answer]).map(a=>a.toLowerCase());
+          resolve(ans.some(a=>v===a||v.includes(a)));
+        };
+        inp.addEventListener('keydown',e=>{if(e.key==='Enter')qz.querySelector('[data-check]').click();});
+      } else {
+        qz.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+          const oi=+b.dataset.oi; const ok=oi===it.answer;
+          qz.querySelectorAll('.opt').forEach((x,xi)=>{ x.disabled=true; if(xi===it.answer)x.classList.add('correct'); else if(xi===oi)x.classList.add('wrong'); });
+          resolve(ok);
+        });
+      }
+    });
+  });
+  return html;
+}
+
+// ---- Predict-then-reveal ----
+function Predict(prompt, reveal){
+  const id=uid();
+  const html=`<div class="predict" id="${id}"><span class="k">🤔 predict first</span>
+    <div style="margin:6px 0">${prompt}</div>
+    <button class="btn" data-r>Reveal answer</button>
+    <div class="reveal">${reveal}</div></div>`;
+  queueMicrotask(()=>{ const w=document.getElementById(id); w.querySelector('[data-r]').onclick=function(){ w.querySelector('.reveal').classList.add('show'); this.style.display='none'; }; });
+  return html;
+}
+
+// ---- Code playground ----
+function Playground(opts){ // {code, note}
+  const id=uid();
+  const html=`<div class="widget" id="${id}"><div class="widget-head"><span class="dots"><i></i><i></i><i></i></span><span class="lbl">runnable playground</span><span style="font-size:.7rem">${opts.note||'edit & run — real hashing'}</span></div>
+    <textarea class="pg-code" spellcheck="false">${esc(opts.code)}</textarea>
+    <div class="step-ctrl" style="border-top:none"><button class="btn primary" data-run>▶ Run</button><span class="spacer">output ↓</span></div>
+    <div class="pg-out">// output appears here</div></div>`;
+  queueMicrotask(()=>{
+    const w=document.getElementById(id), ta=w.querySelector('textarea'), out=w.querySelector('.pg-out');
+    w.querySelector('[data-run]').onclick=()=>{
+      out.innerHTML=''; const logs=[];
+      const log=(...a)=>logs.push(a.map(x=>typeof x==='object'?JSON.stringify(x,null,2):String(x)).join(' '));
+      try{
+        // Sandbox note: this evaluates code locally for learning. Exposes the verified git helpers.
+        const f=new Function('log','gitHashObject','gitHashTree','sha1bytes','utf8','MiniGit','short', ta.value);
+        const ret=f(log, gitHashObject, gitHashTree, sha1bytes, utf8, MiniGit, short);
+        if(ret!==undefined) log('⟵ returned: '+(typeof ret==='object'?JSON.stringify(ret):ret));
+        out.innerHTML='<span class="v">'+esc(logs.join('\n')||'(no output — use log(...))')+'</span>';
+      }catch(e){ out.innerHTML='<span class="e">'+esc(e.toString())+'</span>'; }
+    };
+  });
+  return html;
+}
+
+/* ============================================================================
+   PART F — CURRICULUM (17 lessons across 5 parts)
+   Each lesson: {id, part, title, xp, render()->htmlString}
+   ========================================================================== */
+const svgBG='#ffffff';
+function frame(svg,cap){return {svg,cap};}
+
+const LESSONS=[
+/* ---------- intro ---------- */
+{id:'intro',part:'Start Here',title:'Welcome',xp:10,render:()=>`
+  <div class="hero">
+    <div class="lesson-tag">a course that ends with you building git</div>
+    <h2>Git, From The Inside Out</h2>
+    <p class="lead">Most tutorials teach git as a bag of commands to memorize. This one is different. By the end you'll understand git so deeply you'll <b>build a working version-control engine yourself</b> — and discover it was running this whole course the entire time.</p>
+    <div class="pills"><span class="pill">🧠 active recall</span><span class="pill">🎞️ animated diagrams</span><span class="pill">⌨️ live terminal</span><span class="pill">🔬 real hashing</span><span class="pill">🛠️ build-your-own</span></div>
+  </div>
+  <div class="callout aha"><span class="k">the one idea</span><p>Git looks complicated. It isn't. The entire system is two things: <b>a bag of content addressed by its hash</b>, and <b>a handful of sticky-notes (refs) pointing into that bag</b>. Hold those two ideas and everything else — branches, merges, rebase, remotes — falls out as a consequence. We'll earn that sentence the hard way, so it actually sticks.</p></div>
+  <h3>How this works</h3>
+  <ul>
+    <li><b>Predict before you peek.</b> Every diagram asks you to guess first. Being a little wrong is what burns it into memory.</li>
+    <li><b>Type, don't read.</b> The terminals are real simulators — drive them.</li>
+    <li><b>It compounds.</b> Wrong quiz answers become flashcards (top-right 🔁). Earn XP, keep a streak. The point is to get <i>hooked</i>.</li>
+  </ul>
+  <p>Everything runs locally in this one file. No internet, no account. Share it with anyone.</p>
+  <div class="cliff"><span class="k">first stop</span><p style="margin:.3em 0 0">Before we touch a single command: why does version control even need to <i>exist</i>? Answer that well and git's design stops looking arbitrary.</p></div>
+`},
+
+/* ================= PART I ================= */
+{id:'why',part:'I · The Mental Model',title:'1 · Why version control exists',xp:40,render:()=>`
+  <div class="lesson-tag">Part I · Lesson 1</div>
+  <h2>Why version control exists</h2>
+  <p class="lead">Imagine the folder <code>essay_final_FINAL_v2_actually_final.docx</code>. You've lived this. Version control is the escape from that hell — but <i>how</i> it escapes is the interesting part.</p>
+
+  <h3>The naive idea: save the differences</h3>
+  <p>Your first instinct for "track changes over time" is probably: store the original, then store a list of <b>diffs</b> (what changed each time). Older tools (like SVN, RCS) largely did this.</p>
+  ${Predict('Git does <b>not</b> primarily store diffs between versions. So what does it store for each commit?',
+    'Git <b>models each commit as a full snapshot</b> of the project — not a diff. (Physically, that snapshot is a root tree that reuses unchanged objects — more on that next.) "But that\'s wasteful!" you think. It isn\'t, because of the trick in the next lesson: if a file didn\'t change, the snapshot just <i>reuses the same stored object</i>. Identical content is stored exactly once, ever. So snapshots are cheap, and any version is instantly available without replaying a chain of diffs.')}
+
+  <div class="callout"><span class="k">snapshots, not diffs</span>This is the first place git surprises people. Each commit is a photograph of your <i>entire</i> project. The magic that makes photographs cheap is <b>content-addressable storage</b> — coming in Part II. For now, just hold the image: <i>commit = snapshot</i>.</div>
+
+  <h3>What a version-control system must give you</h3>
+  <table>
+    <tr><th>Need</th><th>How git delivers it</th></tr>
+    <tr><td>Go back to any past state</td><td>Every commit is a complete snapshot</td></tr>
+    <tr><td>See who changed what, when, why</td><td>Commits carry author + message + parent link</td></tr>
+    <tr><td>Work on features in parallel</td><td>Branches (just movable pointers)</td></tr>
+    <tr><td>Combine parallel work</td><td>Merges (a commit with two parents)</td></tr>
+    <tr><td>Collaborate across machines</td><td>Distributed: in a normal clone, everyone has the full history</td></tr>
+  </table>
+
+  ${Quiz([
+    {q:'Git primarily stores each commit as…', options:['A diff against the previous version','A full snapshot of the project (deduplicated)','A compressed zip of changed files only'], answer:1, explain:'Each commit references a complete snapshot. Unchanged content is reused, so it stays cheap.', card:['Does a git commit store a diff or a snapshot?','A full snapshot (with content deduplicated by hash).']},
+    {q:'Why isn\'t storing full snapshots wasteful?', type:'text', answer:['dedup','deduplicate','same hash','reuse','content','hash'], explain:'Identical content hashes to the same object and is stored only once. Unchanged files cost nothing extra.', card:['Why are full snapshots cheap in git?','Identical content → identical hash → stored once. Unchanged files are reused.']}
+  ])}
+
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">A commit is a snapshot. But a snapshot of <i>what</i>, exactly — and at what moment? Git carves your project into <b>three distinct areas</b>, and most git confusion comes from not seeing them. Next.</p></div>
+`},
+
+{id:'three-trees',part:'I · The Mental Model',title:'2 · The three trees',xp:45,render:()=>`
+  <div class="lesson-tag">Part I · Lesson 2</div>
+  <h2>The three trees</h2>
+  <p class="lead">Git is constantly shuffling your files between three places. Name them and 80% of "wait, why did git do that?" evaporates.</p>
+  ${Stepper([
+    frame(threeTreesSVG(0),'<b>1 · Working Directory</b> — the actual files on disk you edit. Right now <code>app.js</code> is modified but git hasn\'t been told anything.'),
+    frame(threeTreesSVG(1),'<b><code>git add app.js</code></b> copies the file into the <b>2 · Staging Area</b> (the "index"). This is the on-deck circle: what <i>will</i> go into the next commit.'),
+    frame(threeTreesSVG(2),'<b><code>git commit</code></b> seals everything staged into the <b>3 · Repository</b> as a permanent snapshot. The staging area is now clean.'),
+    frame(threeTreesSVG(3),'Edit again → working dir diverges from the repo. The cycle repeats: <b style="background:#ccff00;padding:0 4px">edit</b> → <b style="background:#ccff00;padding:0 4px">add</b> → <b style="background:#ccff00;padding:0 4px">commit</b>.'),
+  ])}
+  <div class="callout"><span class="k">the staging area is the superpower</span>Beginners think <code>add</code> is pointless ceremony. It isn't. Staging lets you craft a commit out of <i>part</i> of your changes — commit the bug fix now, leave the half-finished refactor for later. You're composing the snapshot deliberately.</div>
+
+  <h3>Try it — feel the three trees move</h3>
+  <p>Create a file, stage it, commit it. Watch <code>git status</code> change at each step.</p>
+  ${Terminal({chips:['echo "hi" > a.txt','git status','git init','git add a.txt','git commit -m "first"'], note:'do it in order'})}
+
+  ${Quiz([
+    {q:'Which command moves changes from the working directory into the staging area?', options:['git commit','git add','git status','git init'], answer:1, explain:'git add stages. git commit then seals the staged snapshot into the repository.', card:['Which command stages changes (working dir → index)?','git add']},
+    {q:'After git commit, the staging area is…', options:['Deleted','Clean / matches the new commit','Copied to a backup'], answer:1, explain:'Staging now matches the just-made commit; "nothing to commit, working tree clean".'}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">You typed <code>git commit</code> and a snapshot appeared. But where did it physically <i>go</i>, and what is that weird 40-character code git printed? Time to open the box.</p></div>
+`},
+
+{id:'first-commits',part:'I · The Mental Model',title:'3 · Your first commits',xp:50,render:()=>`
+  <div class="lesson-tag">Part I · Lesson 3</div>
+  <h2>Your first commits (driving the engine)</h2>
+  <p class="lead">Let's build a tiny history from scratch. The terminal below is a <b>real engine</b> — it computes genuine git hashes and draws the actual object graph. Treat it like a sandbox.</p>
+
+  <div class="callout aha"><span class="k">secret</span>This simulator is powered by a ~150-line JavaScript engine called <code>MiniGit</code>. In Part V you'll build that engine yourself. So everything you do here, you're about to be able to <i>recreate</i>. Keep that in the back of your mind.</div>
+
+  <h3>Mission</h3>
+  <ol>
+    <li>Initialize a repo.</li>
+    <li>Create and commit a <code>README</code>.</li>
+    <li>Make a second commit.</li>
+    <li>Run <code>git log</code> and watch the graph grow.</li>
+  </ol>
+  ${Terminal({autorun:['git init'], chips:['echo "# My Project" > README','git add README','git commit -m "add readme"','echo "line two" > notes.txt','git add .','git commit -m "add notes"','git log'], note:'click chips left→right, or type your own'})}
+
+  ${Predict('After two commits, how many <b>parent</b> links exist in this history?',
+    'One. The first commit has <b>no</b> parent (it\'s the root). The second commit points back to the first. So a linear history of N commits has N−1 parent links — a singly-linked list pointing <i>backward</i> in time. That backward chain is why git can always reconstruct history from any commit.')}
+
+  ${Quiz([
+    {q:'The very first commit in a repository has how many parents?', options:['One','Zero','Two'], answer:1, explain:'The root commit has no parent. Every later commit links back to its predecessor(s).', card:['How many parents does the first (root) commit have?','Zero.']},
+    {q:'Type the command that shows the commit history:', type:'text', answer:['git log','log'], explain:'git log walks the parent links backward from HEAD.'}
+  ])}
+  <div class="cliff"><span class="k">end of Part I</span><p style="margin:.3em 0 0">You can now use git. But "using" isn't "understanding." Part II cracks git open and reveals the shockingly simple machine inside. This is where it gets addictive.</p></div>
+`},
+
+/* ================= PART II ================= */
+{id:'cas',part:'II · How Git Stores Things',title:'4 · Content-addressable storage',xp:60,render:()=>`
+  <div class="lesson-tag">Part II · Lesson 4 · the big one</div>
+  <h2>Content-addressable storage & blobs</h2>
+  <p class="lead">Here is the idea the entire system is built on. Go slow. This is the lever that moves the world.</p>
+
+  <p>Normally you store a file <i>by its name</i> and ask "what's inside <code>report.txt</code>?". Git flips this around. Git stores content <b>by a fingerprint of the content itself</b>, and asks "give me the thing whose fingerprint is <code>ce01362…</code>".</p>
+  <p>That fingerprint is a <b>SHA-1 hash</b>: feed in any bytes, get out a fixed 40-character hex string. Same bytes → same hash, always. Different bytes → (essentially always) a different hash.</p>
+
+  <div class="callout aha"><span class="k">git's exact recipe for a blob</span>To store a file's contents (a "blob"), git does <b>not</b> hash the raw bytes alone. It hashes:<br><code>"blob " + &lt;byte-length&gt; + "\\0" + &lt;contents&gt;</code><br>That little header is the whole secret. Let's prove it produces a <i>real</i> git hash.</div>
+
+  <h3>Compute a real git hash, right now</h3>
+  <p>The playground below uses the <b>same SHA-1 implementation that powers this whole site</b>, verified against the actual <code>git</code> binary. Run it. The hash you get for <code>"hello\\n"</code> is byte-for-byte what <code>git hash-object</code> prints on a real machine.</p>
+  ${Playground({code:`// git's blob recipe: sha1("blob " + len + "\\0" + content)
+const content = "hello\\n";
+const hash = gitHashObject("blob", content);
+log("content :", JSON.stringify(content));
+log("git hash:", hash);
+log("");
+log("Run 'printf \\"hello\\\\n\\" | git hash-object --stdin'");
+log("on any real machine — you'll get the SAME hash:");
+log("ce013625030ba8dba906f756967f9e9ca394464a");`, note:'this is real — try changing the content'})}
+
+  ${Predict('Change the content to <code>"hello"</code> (no newline). Will the hash change a little, or completely?',
+    'Completely. Hashes have no notion of "close." Flip one bit and ~half the output bits flip — the <b>avalanche effect</b>. This is exactly why Git can use a hash as an identity: if two hashes match, Git treats the contents as identical; if they differ at all, the hash is totally different. There\'s no "almost the same object." <i>(Cryptographically, SHA-1 collisions are possible — which is why modern Git adds collision detection and supports SHA-256. In everyday use, matching hash = same content.)</i>')}
+
+  <div class="callout"><span class="k">two consequences you get for free</span>
+  <b>1. Automatic deduplication.</b> Commit the same file in 100 commits → it's stored <i>once</i>, because it always hashes to the same address. (Remember Lesson 1's "snapshots are cheap"? This is why.)<br>
+  <b>2. Built-in integrity.</b> If a stored byte ever corrupts, its content no longer matches its hash-address — git notices instantly.</div>
+
+  ${Quiz([
+    {q:'Git addresses stored content by…', options:['Its filename','A hash of its contents','Its creation timestamp'], answer:1, explain:'Content-addressable: the address IS the hash of the content. Same content → same address → stored once.', card:['How does git address stored objects?','By the SHA-1 hash of their contents (content-addressable).']},
+    {q:'Before hashing a file\'s contents, git prepends a header. What is it (roughly)?', type:'text', answer:['blob','blob len','blob length','blob size'], explain:'"blob <length>\\0" then the content. The type+length header is part of what gets hashed.', card:['What header does git hash before a blob\'s content?','"blob <byte-length>\\0"']},
+    {q:'Two files with identical contents but different names are stored as…', options:['Two separate objects','One single object','It depends on the folder'], answer:1, explain:'Content-addressable storage cares only about content. One object, shared.'}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">A blob stores a file's <i>contents</i> — but notice it stored no filename! So where do filenames and folder structure live? In a second kind of object…</p></div>
+`},
+
+{id:'trees',part:'II · How Git Stores Things',title:'5 · Trees (directories)',xp:55,render:()=>`
+  <div class="lesson-tag">Part II · Lesson 5</div>
+  <h2>Trees: how git remembers structure</h2>
+  <p class="lead">Blobs hold contents but no names. A <b>tree</b> object is git's version of a directory: a list mapping names → the hash of a blob (file) or another tree (subfolder).</p>
+  ${Stepper([
+    frame(treeSVG(0),'A <b>tree</b> is just a list of entries. Each entry = <code>mode · name · hash</code>. Here the tree has one entry: <code>greeting.txt → ce01362…</code> (a blob).'),
+    frame(treeSVG(1),'Subfolders? An entry can point to <i>another tree</i>. <code>src/</code> is a tree-entry pointing at a child tree. Recursion — trees all the way down.'),
+    frame(treeSVG(2),'So a full project snapshot is one <b>root tree</b> that (transitively) names every file via blobs. <i>This</i> is the "snapshot" from Lesson 1.'),
+  ])}
+
+  <div class="callout aha"><span class="k">the tree itself has a hash too</span>A tree is content, so it's content-addressable just like a blob. Its hash is computed over its sorted entries (each: <code>mode name\\0</code> + the entry's <i>raw</i> hash bytes). Change any file → its blob hash changes → the tree containing it gets a new hash → all the way up to the root. The root tree's hash is a fingerprint of your <i>entire</i> project state.</div>
+
+  <h3>Build a real tree hash</h3>
+  <p>Below we hash a blob, then a tree containing it. Both match real git exactly (verified against <code>git write-tree</code>).</p>
+  ${Playground({code:`// 1) hash the file content as a blob
+const blob = gitHashObject("blob", "hello\\n");
+log("blob greeting.txt:", blob);
+
+// 2) build a tree with one entry pointing at that blob
+const tree = gitHashTree([
+  { mode: "100644", name: "greeting.txt", hash: blob }
+]);
+log("tree hash       :", tree);
+log("");
+log("Real git produces this exact tree: 57e9529754dc514a3ec10db2ff882018fbe1fcbf");`, note:'add another entry and watch the tree hash change'})}
+
+  ${Predict('You change one character inside one file in a 10,000-file project. How many tree hashes change?',
+    'Only the trees on the <b>path from that file up to the root</b> — typically a handful, not all 10,000. The blob changes, its parent folder\'s tree changes, that folder\'s parent changes, … up to the root. Every <i>other</i> tree and blob keeps its old hash and is reused untouched. This is why snapshots are cheap: a commit mostly <i>reuses</i> the previous commit\'s objects.')}
+
+  ${Quiz([
+    {q:'A tree object stores…', options:['File contents','A list of names → hashes (of blobs or subtrees)','Commit messages'], answer:1, explain:'Trees give structure: names + modes + the hash each name points to. Contents live in blobs.', card:['What does a tree object store?','A directory listing: name → mode → hash of a blob or subtree.']},
+    {q:'Changing one file changes the hash of…', options:['Every object in the repo','Only that blob','That blob and every tree from it up to the root'], answer:2, explain:'The change ripples up the path to the root tree; everything off that path is reused.', card:['Editing one file changes which hashes?','That blob + every tree on the path up to the root. Everything else is reused.']}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">A root tree captures <i>what</i> the project looks like. But it has no author, no date, no message, and no link to what came before. Wrap it in one more object and you get… a commit.</p></div>
+`},
+
+{id:'commits',part:'II · How Git Stores Things',title:'6 · Commits',xp:55,render:()=>`
+  <div class="lesson-tag">Part II · Lesson 6</div>
+  <h2>Commits: a snapshot with a story</h2>
+  <p class="lead">A commit is the third object type, and it's almost embarrassingly simple. It's a tiny text object that says: "here's a root tree, here's who/when/why, and here's the commit(s) that came before me."</p>
+  ${Stepper([
+    frame(commitObjSVG(),'A <b>commit object</b> is plain text: a <code>tree</code> line (the snapshot), zero or more <code>parent</code> lines, an <code>author</code> + <code>committer</code>, and the message. That\'s the whole thing.'),
+  ])}
+
+  <div class="callout"><span class="k">commit = tree + parent(s) + metadata</span>
+  <pre style="font-family:var(--mono);font-size:.82rem;color:#e8e8e8;background:#000;padding:12px;border:3px solid #000;border-radius:0;box-shadow:4px 4px 0 0 #000;overflow:auto">tree   57e9529754dc514a3ec10db2ff882018fbe1fcbf
+parent 9a1c...      ← the commit before this one
+author You &lt;you@local&gt; 1700000000 +0000
+committer You &lt;you@local&gt; 1700000000 +0000
+
+add greeting</pre>
+  And — you guessed it — this text gets the <code>"commit &lt;len&gt;\\0"</code> header and is hashed. The commit's hash therefore depends on its tree, its parents, AND its message/author/time. Change <i>any</i> of those and you get a different commit hash.</div>
+
+  ${Predict('You amend a commit\'s message but change no files. Does the commit hash change?',
+    'Yes! The message is part of the hashed content. New message → new commit hash → it is technically a <b>brand-new commit object</b>. (The old one is now unreferenced.) This is the deep reason that "editing history" in git always creates new commits rather than mutating old ones — objects are immutable, identified by their content. You never change a commit; you replace it.')}
+
+  <h3>Build a commit hash yourself</h3>
+  ${Playground({code:`// A commit is just text, hashed with a "commit" header.
+const tree = "57e9529754dc514a3ec10db2ff882018fbe1fcbf";
+const body =
+  "tree " + tree + "\\n" +
+  "author You <you@local> 1700000000 +0000\\n" +
+  "committer You <you@local> 1700000000 +0000\\n" +
+  "\\n" +
+  "add greeting\\n";
+log(body);
+log("commit hash:", gitHashObject("commit", body));
+log("");
+log("// change one character of the message and re-run →");
+log("// completely different commit hash.");`, note:'immutability, demonstrated'})}
+
+  ${Quiz([
+    {q:'A commit object directly contains…', options:['The full file contents','A pointer to a root tree, parent links, and metadata','Only a diff from its parent'], answer:1, explain:'Commit = tree hash + parent hash(es) + author/committer/message. Contents live in blobs under the tree.', card:['What does a commit object contain?','A root-tree hash, zero+ parent hashes, author/committer, and the message.']},
+    {q:'Editing a commit\'s message produces…', options:['The same commit, updated in place','A new commit with a different hash'], answer:1, explain:'Objects are immutable & content-addressed. Different bytes → different hash → a new object.', card:['Why does git create a new commit when you amend?','Objects are immutable; changing any byte changes the hash, so it\'s a new object.']}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">Blobs, trees, commits — the three object types behind ordinary history, all hashed, all immutable. (Git has a fourth, the annotated <code>tag</code> object; we'll meet it at the very end.) Wire commits together by their parent links and a shape emerges: the <b>commit graph</b>. Let's see the whole machine at once.</p></div>
+`},
+
+{id:'dag',part:'II · How Git Stores Things',title:'7 · The commit DAG',xp:55,render:()=>`
+  <div class="lesson-tag">Part II · Lesson 7</div>
+  <h2>The commit graph (DAG)</h2>
+  <p class="lead">Connect every commit to its parent(s) and you get a <b>Directed Acyclic Graph</b> — arrows point backward in time, and (because objects are immutable) there are never any cycles. This graph <i>is</i> your history.</p>
+  ${Stepper([
+    frame(dagSVG(0),'One commit, <code>C1</code>. It points to a tree (its snapshot). No parents — it\'s the root.'),
+    frame(dagSVG(1),'Commit again. <code>C2</code> points back to <code>C1</code>. The arrow goes <i>backward</i> — a commit knows its past, never its future.'),
+    frame(dagSVG(2),'<code>C3</code> continues the chain. A straight line so far — this is a linear history.'),
+    frame(dagSVG(3),'Branch off <code>C2</code> and commit: <code>C4</code> also has <code>C2</code> as parent. Now <code>C2</code> has two children — the graph forks.'),
+    frame(dagSVG(4),'Merge the two lines: <code>C5</code> has <b>two parents</b> (<code>C3</code> and <code>C4</code>). Forks and merges — every git history is just this shape.'),
+  ])}
+  <div class="callout aha"><span class="k">there are no branches in this picture</span>Notice the DAG above is <i>complete</i> without any branch names. Branches, tags, HEAD — none of them are part of the history graph. They're just labels we stick onto nodes to find our way around. That realization is Part III.</div>
+
+  <h3>Grow your own DAG and watch it render</h3>
+  <p>Make a fork: commit on <code>main</code>, branch, commit again, then merge. The graph updates live.</p>
+  ${Terminal({autorun:['git init'], chips:['echo "a" > f.txt','git add .','git commit -m "C1"','echo "b" > f.txt','git add .','git commit -m "C2"','git checkout -b feature','echo "c" > g.txt','git add .','git commit -m "C3 on feature"','git checkout main','echo "d" > h.txt','git add .','git commit -m "C4 on main"','git merge feature','git log'], note:'both branches commit → a real merge commit appears'})}
+
+  ${Quiz([
+    {q:'"DAG" stands for…', options:['Data Access Graph','Directed Acyclic Graph','Distributed Atomic Group'], answer:1, explain:'Directed (arrows to parents), Acyclic (no loops — you can\'t be your own ancestor).', card:['What does the "DAG" in git\'s commit graph stand for?','Directed Acyclic Graph.']},
+    {q:'A merge commit is special because it has…', options:['No tree','Two (or more) parents','No message'], answer:1, explain:'Multiple parents = the point where two lines of history rejoin.', card:['What makes a merge commit special?','It has two (or more) parent commits.']},
+    {q:'Why can the commit graph never have a cycle?', type:'text', answer:['immutable','hash','parent','content','can\'t change','past'], explain:'A commit\'s hash includes its parents\' hashes, which already exist. You can\'t point forward to something not yet created, so no cycles.'}
+  ])}
+  <div class="cliff"><span class="k">end of Part II</span><p style="margin:.3em 0 0">You now understand git's storage completely: objects in a bag, addressed by hash, wired into a DAG. Part III adds the <i>only</i> remaining ingredient — the sticky-notes that make it usable.</p></div>
+`},
+
+/* ================= PART III ================= */
+{id:'refs',part:'III · Pointers All The Way Down',title:'8 · Refs & HEAD',xp:55,render:()=>`
+  <div class="lesson-tag">Part III · Lesson 8</div>
+  <h2>Refs, HEAD, and the truth about branches</h2>
+  <p class="lead">Brace yourself for the most freeing fact in git: <b>a branch is a file containing one 40-character hash.</b> That's the entire implementation.</p>
+  ${Stepper([
+    frame(refsSVG(0),'The DAG sits in the object bag. To "be on" a commit, git keeps a <b>ref</b> — a tiny file. <code>refs/heads/main</code> literally contains the hash of <code>C2</code>.'),
+    frame(refsSVG(1),'<code>HEAD</code> is a ref-to-a-ref: it usually says "I am <code>refs/heads/main</code>." So HEAD → main → C2. That\'s how git knows where you are.'),
+    frame(refsSVG(2),'Commit again → git writes <code>C3</code> to the bag, then <b>rewrites the one line in <code>main</code></b> to point at <code>C3</code>. The branch "moved" by editing one tiny file (a hash + newline).'),
+  ])}
+  <div class="callout aha"><span class="k">why this is liberating</span>"Creating a branch" sounds heavy — copying files, duplicating history? No. It writes a <b>tiny new file</b> — in the common case just the commit's 40-character hash plus a newline. (Git can also bundle refs into a single <code>packed-refs</code> file, and SHA-256 repos use longer hashes — but the mental model is identical.) That's why Git branching is instant and free, while it was slow and scary in older systems. A branch is the cheapest possible thing: a labeled pointer.</div>
+
+  <h3>See it for yourself</h3>
+  <p>In real git you can literally <code>cat .git/refs/heads/main</code> and see the hash. Here, use <code>git log</code> — the <code>(main)</code> and <code>(HEAD)</code> labels you see <i>are</i> these refs.</p>
+  ${Terminal({autorun:['git init'], chips:['echo "x" > a','git add .','git commit -m "C1"','echo "y" > a','git add .','git commit -m "C2"','git log','git branch'], note:'the labels in the graph are refs'})}
+
+  ${Predict('You have 50 branches in a repo. Roughly how much disk does the branch <i>machinery</i> itself consume (ignoring commits)?',
+    'About 2 KB total — each branch is just a name plus one hash (stored as a tiny loose file, or packed together in <code>packed-refs</code>). Branches are practically free, which is <i>why</i> the Git workflow encourages making a branch for every little thing. The commits are shared in the object bag; the branches are just cheap labels pointing into it.')}
+
+  ${Quiz([
+    {q:'A branch in git is fundamentally…', options:['A copy of all the project files','A file containing a single commit hash','A compressed archive of history'], answer:1, explain:'refs/heads/<name> holds one commit hash. Moving a branch = rewriting that hash.', card:['What IS a branch, physically?','A small file (refs/heads/<name>) containing one commit hash.']},
+    {q:'HEAD normally points to…', options:['A commit directly','The current branch ref','The remote server'], answer:1, explain:'HEAD usually contains "ref: refs/heads/<branch>". Committing moves that branch, and HEAD follows.', card:['What does HEAD normally point to?','The current branch ref (e.g. refs/heads/main), which in turn points to a commit.']},
+    {q:'When you make a commit, what physically updates so the branch "moves"?', type:'text', answer:['ref','the ref','branch ref','refs/heads','the branch file','main'], explain:'Git writes the new commit, then rewrites the current branch ref to hold the new commit\'s hash.'}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">If a branch is just a movable pointer, then "switching branches" and "branching off" are just… moving pointers. Let's watch exactly what moves.</p></div>
+`},
+
+{id:'branching',part:'III · Pointers All The Way Down',title:'9 · Branching & switching',xp:55,render:()=>`
+  <div class="lesson-tag">Part III · Lesson 9</div>
+  <h2>Branching & switching: what actually moves</h2>
+  <p class="lead">Now that you know branches are pointers, branching becomes trivial to reason about. Three operations, three pointer moves.</p>
+  ${Stepper([
+    frame(branchSVG(0),'Start: <code>main</code> → C2, and <code>HEAD</code> → <code>main</code>.'),
+    frame(branchSVG(1),'<code>git branch feature</code>: write a new pointer <code>feature</code> → C2. Nothing else moves. HEAD still on main. Two labels, same commit.'),
+    frame(branchSVG(2),'<code>git checkout feature</code>: only <b>HEAD</b> moves — now HEAD → <code>feature</code>. Your files don\'t change (both point at C2).'),
+    frame(branchSVG(3),'<code>git commit</code>: C3 is written with parent C2; the <i>current</i> branch <code>feature</code> advances to C3. <code>main</code> stays at C2. The history forks.'),
+  ])}
+  <div class="callout"><span class="k">the rule</span><b>Commits move the branch that HEAD currently points to.</b> That single rule explains every branching scenario. "Which branch advances when I commit?" → "Whichever one HEAD is on."</div>
+
+  ${Predict('You\'re on <code>feature</code> (at C3). You run <code>git checkout main</code> then <code>git commit</code> a new C4. What is the parent of C4?',
+    'C2 — because <code>main</code> still points at C2, and you committed while HEAD was on main. C4\'s parent is whatever commit the current branch pointed at. Now C2 has two children (C3 via feature, C4 via main): a fork. The parent link always records "where I was when I committed."')}
+
+  ${Terminal({autorun:['git init'], chips:['echo "1" > a','git add .','git commit -m "C2"','git branch feature','git checkout feature','echo "2" > a','git add .','git commit -m "C3 feature"','git checkout main','git log','git branch'], note:'watch which label advances'})}
+
+  ${Quiz([
+    {q:'git branch feature (without checkout) does what?', options:['Creates pointer + switches to it','Creates a pointer at the current commit, stays put','Copies the project to a new folder'], answer:1, explain:'It only creates the ref. HEAD doesn\'t move until you checkout/switch.', card:['Does `git branch x` switch you onto x?','No — it only creates the pointer. You stay on the current branch until checkout.']},
+    {q:'When you commit, which branch advances?', options:['main, always','The one HEAD currently points to','All branches'], answer:1, explain:'Commits move the current branch (the one HEAD references).', card:['When you commit, which branch moves forward?','The branch HEAD currently points to.']}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">Two branches have diverged. Eventually you'll want them back together. That's merging — and there are two very different ways it can happen.</p></div>
+`},
+
+{id:'merging',part:'III · Pointers All The Way Down',title:'10 · Merging',xp:60,render:()=>`
+  <div class="lesson-tag">Part III · Lesson 10</div>
+  <h2>Merging: fast-forward vs. three-way</h2>
+  <p class="lead">Merging combines two lines of history. Whether git can do it the lazy way or the real way depends entirely on the <i>shape</i> of the graph.</p>
+
+  <h3>Case 1 — Fast-forward (the lazy, clean case)</h3>
+  ${Stepper([
+    frame(ffSVG(0),'<code>main</code> → C1. You branched <code>feature</code> and committed C2, C3. Crucially, <code>main</code> hasn\'t moved since you branched.'),
+    frame(ffSVG(1),'<code>git checkout main; git merge feature</code>. Since main is a direct <i>ancestor</i> of feature, git just slides <code>main</code> forward to C3. No new commit needed.'),
+    frame(ffSVG(2),'Result: a straight line. This is a <b>fast-forward</b> — git literally just moved the pointer. Nothing to reconcile.'),
+  ])}
+
+  <h3>Case 2 — Three-way merge (the real case)</h3>
+  ${Stepper([
+    frame(tw3SVG(0),'Now both sides moved: <code>main</code> has C4, <code>feature</code> has C3, and they share ancestor C2. The histories truly <b>diverged</b>.'),
+    frame(tw3SVG(1),'Git can\'t just slide a pointer. It finds the <b>merge base</b> (C2, the common ancestor) and compares both sides against it — a "three-way" comparison.'),
+    frame(tw3SVG(2),'It creates a new <b>merge commit</b> C5 with <b>two parents</b> (C4 and C3). <code>main</code> advances to C5. The fork is rejoined.'),
+  ])}
+  <div class="callout"><span class="k">why "three-way"?</span>To merge two diverged versions sensibly, git needs a third reference point: their common ancestor (the merge base). "Both changed this line" vs "only one side changed it" can only be told apart by looking at where they <i>started</i>. Two-way diff can't; three-way can.</div>
+
+  ${Predict('If main is a direct ancestor of feature (main never moved), will <code>git merge feature</code> create a merge commit?',
+    'No — it fast-forwards. There\'s nothing to reconcile because main\'s history is fully contained in feature\'s. Git just advances the main pointer. A merge commit is only created when <i>both</i> branches have commits the other lacks (true divergence).')}
+
+  ${Terminal({autorun:['git init'], chips:['echo "1" > a','git add .','git commit -m "C1 base"','git checkout -b feature','echo "2" > b','git add .','git commit -m "C2 feature"','git checkout main','echo "3" > c','git add .','git commit -m "C3 main"','git merge feature','git log'], note:'both sides move → real merge commit'})}
+
+  ${Quiz([
+    {q:'A fast-forward merge happens when…', options:['Both branches have new commits','The target branch is a direct ancestor of the other','There are merge conflicts'], answer:1, explain:'No divergence → git just slides the pointer forward. No merge commit.', card:['When does a merge fast-forward (no merge commit)?','When the branch you\'re on is a direct ancestor of the one you\'re merging in.']},
+    {q:'A three-way merge uses which three points?', options:['Three branches','The two tips + their common ancestor','Three remotes'], answer:1, explain:'The two branch tips and the merge base (common ancestor) — that\'s the "three".', card:['What are the "three" in a three-way merge?','The two branch tips + their common ancestor (merge base).']},
+    {q:'A merge commit differs from a normal commit because it has…', type:'text', answer:['two parents','2 parents','multiple parents','two parent'], explain:'Two parents — one per branch being joined.'}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">Merging preserves the fork in history. But sometimes you want a <i>clean straight line</i> instead — and sometimes you need to undo. Enter rebase, reset, and git's hidden safety net.</p></div>
+`},
+
+{id:'rebase-reset',part:'III · Pointers All The Way Down',title:'11 · Rebase, reset & reflog',xp:60,render:()=>`
+  <div class="lesson-tag">Part III · Lesson 11</div>
+  <h2>Rebase, reset & the reflog safety net</h2>
+  <p class="lead">These three terrify beginners. With the object/pointer model in hand, they're obvious. All three are just <b>moving pointers and replaying commits</b>.</p>
+
+  <h3>Rebase = replay your commits onto a new base</h3>
+  ${Stepper([
+    frame(rebaseSVG(0),'<code>feature</code> (C3, C4) branched off C1. Meanwhile <code>main</code> moved to C2. Diverged.'),
+    frame(rebaseSVG(1),'<code>git rebase main</code> (on feature): git takes feature\'s commits and <b>re-creates them</b> on top of C2 as new commits C3\' and C4\'.'),
+    frame(rebaseSVG(2),'Result: a straight line, as if you\'d started from C2 all along. Note C3\'/C4\' are <b>new objects</b> (new hashes) — the originals are abandoned.'),
+  ])}
+  <div class="callout warn"><span class="k">golden rule of rebase</span>Because rebase creates <i>new</i> commits and abandons the old ones, never rebase commits you've already shared/pushed — collaborators still have the old hashes, and history will conflict. Rebase to tidy <b>local</b> work before sharing.</div>
+
+  <h3>Reset = move the current branch pointer (3 flavors)</h3>
+  <table>
+    <tr><th>Command</th><th>Moves branch?</th><th>Staging</th><th>Working dir</th></tr>
+    <tr><td><code>--soft</code></td><td>yes</td><td>kept (staged)</td><td>kept</td></tr>
+    <tr><td><code>--mixed</code> (default)</td><td>yes</td><td>reset</td><td>kept</td></tr>
+    <tr><td><code>--hard</code></td><td>yes</td><td>reset</td><td><b>discarded</b> ⚠</td></tr>
+  </table>
+  <p>All three move the branch pointer to a chosen commit. They differ only in how much of the "three trees" they drag along.</p>
+
+  ${Predict('You ran <code>git reset --hard</code> and your last 3 commits "vanished." Are those commits gone forever?',
+    'Almost never. <code>reset</code> only moved the branch pointer — the commit objects still sit in the bag, just unreferenced. Git\'s <b>reflog</b> recorded every place HEAD has been. <code>git reflog</code> shows the old hash; <code>git reset --hard &lt;that-hash&gt;</code> brings them right back. Objects are immutable and stick around until garbage-collected, so "lost" commits are usually recoverable. The reflog is git\'s undo history.')}
+
+  <div class="callout aha"><span class="k">the reflog is your undo button</span>Every time HEAD moves (commit, checkout, reset, rebase…), Git records the old hash, the new hash, and the reason in the reflog. So even "destructive" operations are reversible: find the old hash in <code>git reflog</code> and point a branch back at it. Knowing this turns git from scary to fearless.</div>
+
+  ${Quiz([
+    {q:'Rebase differs from merge because it…', options:['Deletes the other branch','Replays commits as new objects onto a new base','Requires a remote'], answer:1, explain:'Rebase rewrites: it creates new commits with new hashes on top of the target, yielding a linear history.', card:['How does rebase differ from merge?','Merge joins with a 2-parent commit; rebase replays your commits as NEW commits on a new base (linear, new hashes).']},
+    {q:'Which reset flavor discards working-directory changes?', options:['--soft','--mixed','--hard'], answer:2, explain:'--hard resets branch, staging, AND working tree. The only one that can lose uncommitted work.', card:['Which `git reset` flavor can lose uncommitted work?','--hard (it resets the working directory too).']},
+    {q:'After an accidental reset, which command finds the lost commit?', type:'text', answer:['git reflog','reflog'], explain:'git reflog lists every position HEAD has held — copy the old hash and reset back to it.', card:['What command recovers commits after a bad reset?','git reflog (then reset/checkout to the old hash).']}
+  ])}
+  <div class="cliff"><span class="k">end of Part III</span><p style="margin:.3em 0 0">You\'ve mastered the local model. But git\'s "distributed" in its name. How does your bag-of-objects sync with someone else\'s? Part IV.</p></div>
+`},
+
+/* ================= PART IV ================= */
+{id:'remotes',part:'IV · Distributed & Practical',title:'12 · Remotes & syncing',xp:55,render:()=>`
+  <div class="lesson-tag">Part IV · Lesson 12</div>
+  <h2>Remotes: distributed by design</h2>
+  <p class="lead">There is no "central server" in git's model. A remote is just <b>another full repository</b> — same object bag, same refs — that you sync with. In a normal clone, everyone has the entire history.</p>
+  ${Stepper([
+    frame(remoteSVG(0),'You and a remote (e.g. GitHub) each hold a <i>complete</i> repo: objects + refs. They start in sync at C2.'),
+    frame(remoteSVG(1),'You commit C3 locally. The remote doesn\'t know yet. Your <code>origin/main</code> (a "remote-tracking" ref) still shows C2 — your last-known view of them.'),
+    frame(remoteSVG(2),'<code>git push</code>: you send the missing objects (C3) to the remote and ask it to move <i>its</i> <code>main</code> to C3. Now both match.'),
+    frame(remoteSVG(3),'<code>git fetch</code> is the reverse: download <i>their</i> new objects and update your <code>origin/main</code> tracking ref — without touching your working files. <code>pull</code> = fetch + merge.'),
+  ])}
+  <div class="callout"><span class="k">three kinds of ref to keep straight</span><b>main</b> = your local branch. <b>origin/main</b> = your <i>cached memory</i> of where the remote's main was at last fetch. <b>the remote's own main</b> = the truth on the server. Push/fetch reconcile these. Most "why is git out of sync?" confusion is forgetting that <code>origin/main</code> only updates when you fetch.</div>
+
+  ${Predict('You run <code>git fetch</code>. Does your current working directory or local <code>main</code> branch change?',
+    'No. <code>fetch</code> only downloads objects and updates remote-tracking refs like <code>origin/main</code>. Your files and your local <code>main</code> are untouched — fetch is always safe. To actually integrate the fetched work you then <code>merge</code> (or <code>rebase</code>). <code>git pull</code> just does both in one step, which is why pull can surprise you and fetch never does.')}
+
+  ${Quiz([
+    {q:'A git remote is…', options:['A special central server type','Just another full copy of the repository','A backup of only the latest commit'], answer:1, explain:'Distributed: every clone is a complete repo. "Remote" is just one you sync with.', card:['What is a git remote, fundamentally?','Just another complete repository (objects + refs) that you sync with.']},
+    {q:'git fetch changes…', options:['Your working files','Only remote-tracking refs (e.g. origin/main)','Your local main branch'], answer:1, explain:'Fetch is safe: downloads objects + updates origin/* refs. Integration (merge/rebase) is separate.', card:['What does `git fetch` change (and not change)?','Updates remote-tracking refs + downloads objects. Does NOT touch your files or local branch.']},
+    {q:'git pull is equivalent to…', type:'text', answer:['fetch and merge','fetch + merge','fetch then merge','fetch merge'], explain:'pull = fetch + merge (or fetch + rebase if configured).', card:['git pull = ?','fetch + merge (or fetch + rebase).']}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">One more practical superpower the object model unlocks: working on multiple branches <i>at the same time</i>, in separate folders, sharing one object bag — worktrees.</p></div>
+`},
+
+{id:'worktrees',part:'IV · Distributed & Practical',title:'13 · Worktrees & stash',xp:55,render:()=>`
+  <div class="lesson-tag">Part IV · Lesson 13</div>
+  <h2>Worktrees & stash: parallel workspaces</h2>
+  <p class="lead">You're mid-feature, files half-edited. "Production is down — fix it NOW." Switching branches means stashing your mess. Worktrees let you sidestep the whole problem.</p>
+
+  <h3>The problem</h3>
+  <p>One checkout = one branch at a time. A context-switch normally means <code>git stash</code> (shelve changes) → <code>checkout main</code> → fix → <code>checkout</code> back → <code>stash pop</code>. Friction.</p>
+
+  <h3>The worktree insight</h3>
+  ${Stepper([
+    frame(worktreeSVG(0),'Normally: one <code>.git</code> object bag, one working directory tied to HEAD. You can only be "at" one commit on disk.'),
+    frame(worktreeSVG(1),'<code>git worktree add ../hot main</code> creates a <b>second working directory</b> checked out to <code>main</code> — but it shares the <i>same</i> object bag. Two folders, one history.'),
+    frame(worktreeSVG(2),'Now fix the bug in <code>../hot</code> while your half-done feature sits <b>untouched</b> in the original folder. No stashing. When done, <code>git worktree remove ../hot</code>.'),
+  ])}
+  <div class="callout aha"><span class="k">why this is basically free</span>Because all history lives in the shared object bag (the thing you\'ve understood since Part II), a worktree only needs its own working files + index + a HEAD. The expensive part — the objects — isn\'t duplicated. One repo, many simultaneous checkouts. Rule: the same branch can\'t be checked out in two worktrees at once (git would have two HEADs fighting over one ref).</div>
+
+  <table>
+    <tr><th>Situation</th><th>Best tool</th></tr>
+    <tr><td>Quick switch, back in 2 min</td><td><code>git stash</code></td></tr>
+    <tr><td>Parallel long-running work / review a PR while coding</td><td><b>worktree</b></td></tr>
+    <tr><td>Totally independent clone (different remotes)</td><td>separate <code>git clone</code></td></tr>
+  </table>
+
+  ${Predict('Two worktrees share one object bag. If you commit in worktree A, can worktree B immediately see that commit object?',
+    'Yes — the commit object lands in the shared bag instantly, so B can reference it (e.g. <code>git log</code> a hash, merge it, cherry-pick it). What B <i>won\'t</i> do is change its own checked-out files, because B has its own HEAD/branch. Shared history, independent working states. That\'s the whole point.')}
+
+  ${Quiz([
+    {q:'Multiple worktrees of one repo share…', options:['The same working files','The same .git object database','Nothing'], answer:1, explain:'They share the object database and most refs; each has its own working directory, index, and HEAD.', card:['What do multiple git worktrees share vs. keep separate?','Share: the object database + most refs. Separate: working dir, index, and HEAD.']},
+    {q:'Can the same branch be checked out in two worktrees simultaneously?', options:['Yes, freely','No — git forbids it','Only on the same drive'], answer:1, explain:'Two worktrees on one branch would mean two HEADs editing one ref — git rejects it.', card:['Can two worktrees check out the same branch at once?','No — git forbids it (would be two HEADs over one ref).']}
+  ])}
+  <div class="cliff"><span class="k">open loop</span><p style="margin:.3em 0 0">We said snapshots are cheap thanks to dedup — but storing thousands of nearly-identical large files still adds up. Git has one more compression trick: packfiles.</p></div>
+`},
+
+{id:'packfiles',part:'IV · Distributed & Practical',title:'14 · Packfiles & deltas',xp:50,render:()=>`
+  <div class="lesson-tag">Part IV · Lesson 14</div>
+  <h2>Packfiles & deltas: staying small</h2>
+  <p class="lead">Content-addressing dedups <i>identical</i> objects. But two versions of a big file that differ by one line are two different objects → two different hashes → stored separately. Wouldn't that bloat? Git's answer: packfiles.</p>
+  ${Stepper([
+    frame(packSVG(0),'Day-to-day, git writes each object as its own zlib-compressed file in <code>.git/objects/</code> — these are "loose objects". Simple, but redundant for similar files.'),
+    frame(packSVG(1),'Periodically (or on push), git runs <b>packing</b>: it bundles many objects into one <b>packfile</b> and stores similar objects as <b>deltas</b> — "object B = object A + these changes".'),
+    frame(packSVG(2),'A packfile + its index can represent thousands of versions of a file in a fraction of the space, while still letting any object be reconstructed on demand.'),
+  ])}
+  <div class="callout"><span class="k">deltas don't break the model</span>Important: deltas are a <i>storage</i> optimization, invisible to everything above. Logically every object still has its full content and its own hash. Git transparently rebuilds an object from its delta chain when asked. So your mental model from Part II stays 100% intact — packfiles just make it efficient on disk and over the network.</div>
+
+  ${Predict('Does delta-compression change an object\'s hash?',
+    'No. The hash is always computed over the object\'s <i>full logical content</i> (the "blob &lt;len&gt;\\0…" recipe). Deltas are purely how the bytes are <i>stored/transmitted</i>. Conceptually, an object\'s identity is always the hash of its full logical content; the delta is only a compact storage representation that Git reconstructs from when needed. Storage format and identity are completely decoupled — which is exactly why Git could even switch hash algorithms without changing how packing works.')}
+
+  ${Quiz([
+    {q:'A packfile stores similar objects as…', options:['Full copies, compressed','Deltas (differences) against a base object','Plain text diffs you can read'], answer:1, explain:'Delta encoding: store one base + reconstruction instructions for similar objects.', card:['How do packfiles save space?','By storing similar objects as deltas (diffs) against a base object, all bundled together.']},
+    {q:'Delta compression changes an object\'s hash:', options:['True','False'], answer:1, explain:'False. Hash is over full logical content; deltas are just storage. Identity is unaffected.', card:['Do packfile deltas change an object\'s hash?','No — hash is over full content; deltas are storage-only.']}
+  ])}
+  <div class="cliff"><span class="k">end of Part IV</span><p style="margin:.3em 0 0">You now understand git more deeply than most engineers who use it daily. Time to <b>prove it by building it.</b></p></div>
+`},
+
+/* ================= PART V ================= */
+{id:'capstone-arch',part:'V · Build Your Own VCS',title:'15 · Architecture recap',xp:50,render:()=>`
+  <div class="lesson-tag">Part V · Lesson 15</div>
+  <h2>The blueprint: everything is objects + refs</h2>
+  <p class="lead">Before we write code, let's collapse the entire course into one diagram. If you can hold this, you can build git.</p>
+  ${Stepper([
+    frame(blueprintSVG(),'<b>The whole system.</b> A content-addressed <b>object store</b> (blobs, trees, commits — all hashed, all immutable) on the bottom. A thin layer of <b>refs</b> (branches, HEAD, tags) pointing into it on top. Commands just read/write these two layers.'),
+  ])}
+  <div class="callout aha"><span class="k">the complete spec, in 6 bullets</span>
+  <ul style="margin:.4em 0">
+    <li><b>blob</b> = <code>hash("blob "+len+"\\0"+content)</code> → stores file contents.</li>
+    <li><b>tree</b> = <code>hash("tree "+len+"\\0"+entries)</code> → maps names to blob/tree hashes.</li>
+    <li><b>commit</b> = <code>hash("commit "+len+"\\0"+text)</code> → a tree + parents + metadata.</li>
+    <li><b>refs</b> = names → object hashes. Branches point to commits; lightweight tags point straight to objects; annotated tags point to tag objects.</li>
+    <li><b>HEAD</b> = pointer to the current ref (or a commit, when detached).</li>
+    <li><b>commands</b> = read/write the object store and move refs. That's all of them.</li>
+  </ul></div>
+  <p>Notice there's nothing else. No magic. Branches, merges, rebase, remotes — every feature we covered is a <i>policy</i> built on these primitives. Now let's implement them.</p>
+
+  ${Quiz([
+    {q:'Git\'s entire data model reduces to which two layers?', type:'text', answer:['objects and refs','objects refs','object store and refs','objects + refs','blobs and refs'], explain:'A content-addressed object store + refs pointing into it. Everything else is built on top.', card:['Git\'s whole data model = which 2 layers?','A content-addressed object store + refs pointing into it.']},
+    {q:'Which of these is a ref, not one of the three object types behind ordinary commits?', options:['blob','tree','commit','branch'], answer:3, explain:'Branch is a ref, not an object. The three objects behind ordinary history are blob, tree, commit. (Git also has a fourth object type — the annotated tag.)', card:['Name the object types behind ordinary git history.','blob, tree, commit (plus a fourth: the annotated tag object). A branch is a ref, not an object.']}
+  ])}
+  <div class="cliff"><span class="k">next</span><p style="margin:.3em 0 0">Code time. We'll implement <code>hashObject</code> → <code>writeTree</code> → <code>commitTree</code> → <code>updateRef</code> → <code>log</code>, building up to a working <code>commit</code> in your browser.</p></div>
+`},
+
+{id:'capstone-build',part:'V · Build Your Own VCS',title:'16 · Build minigit, live',xp:80,render:()=>`
+  <div class="lesson-tag">Part V · Lesson 16 · the payoff</div>
+  <h2>Build your own version control, step by step</h2>
+  <p class="lead">Each cell below adds one piece. Run them in order. By the last cell you'll have a working VCS that produces <b>real git-compatible hashes</b>. You're given <code>gitHashObject</code> and <code>gitHashTree</code> (the verified primitives from Part II) — everything else, you assemble.</p>
+
+  <h3>Step 1 — <code>hashObject</code>: store a blob</h3>
+  <p>The foundation: take content, return its address. (This is <code>git hash-object -w</code>.)</p>
+  ${Playground({code:`// A minimal object store + hashObject.
+const objects = new Map();
+
+function hashObject(type, content) {
+  const h = gitHashObject(type, content);   // verified primitive
+  objects.set(h, { type, content });
+  return h;
+}
+
+const h = hashObject("blob", "hello\\n");
+log("stored blob at:", h);
+log("matches real git:", h === "ce013625030ba8dba906f756967f9e9ca394464a");`})}
+
+  <h3>Step 2 — <code>writeTree</code>: snapshot a set of files</h3>
+  <p>Turn a {filename: content} map into a tree object.</p>
+  ${Playground({code:`const objects = new Map();
+function hashObject(type, content){ const h=gitHashObject(type,content); objects.set(h,{type,content}); return h; }
+
+function writeTree(files) {            // files: {name: content}
+  const entries = Object.entries(files).map(([name, content]) => ({
+    mode: "100644",
+    name,
+    hash: hashObject("blob", content)  // each file becomes a blob
+  }));
+  const treeHash = gitHashTree(entries);
+  objects.set(treeHash, { type:"tree", entries });
+  return treeHash;
+}
+
+const tree = writeTree({ "greeting.txt": "hello\\n" });
+log("tree:", tree);
+log("matches real git:", tree === "57e9529754dc514a3ec10db2ff882018fbe1fcbf");`})}
+
+  <h3>Step 3 — <code>commitTree</code>: wrap a tree in a commit</h3>
+  ${Playground({code:`const objects = new Map();
+function hashObject(type, content){ const h=gitHashObject(type,content); objects.set(h,{type,content}); return h; }
+
+function commitTree(tree, parent, message, ts) {
+  const body =
+    "tree " + tree + "\\n" +
+    (parent ? "parent " + parent + "\\n" : "") +
+    "author You <you@local> " + ts + " +0000\\n" +
+    "committer You <you@local> " + ts + " +0000\\n" +
+    "\\n" + message + "\\n";
+  const h = gitHashObject("commit", body);
+  objects.set(h, { type:"commit", tree, parent, message });
+  return h;
+}
+
+const c1 = commitTree("57e9529754dc514a3ec10db2ff882018fbe1fcbf", null, "first commit", 1700000000);
+log("commit C1:", c1);
+const c2 = commitTree("57e9529754dc514a3ec10db2ff882018fbe1fcbf", c1, "second commit", 1700000060);
+log("commit C2:", c2, "(parent:", c1.slice(0,7) + ")");`})}
+
+  <h3>Step 4 — refs + <code>commit</code>: tie it together</h3>
+  <p>Add refs and a HEAD, and wire up a real <code>commit()</code> that advances the current branch. This is a complete, if tiny, VCS:</p>
+  ${Playground({code:`// ===== minigit: a working version-control engine in ~25 lines =====
+const objects = new Map();          // hash -> object   (the bag)
+const refs = new Map();             // branch -> commit hash
+let HEAD = "main";                  // current branch name
+
+function hashObject(type, content){ const h=gitHashObject(type,content); objects.set(h,{type,content}); return h; }
+function writeTree(files){
+  const entries = Object.entries(files).map(([name,content]) => ({mode:"100644", name, hash:hashObject("blob",content)}));
+  const t = gitHashTree(entries); objects.set(t,{type:"tree",entries}); return t;
+}
+function updateRef(branch, hash){ refs.set(branch, hash); }
+
+function commit(files, message, ts){
+  const tree = writeTree(files);
+  const parent = refs.get(HEAD) || null;
+  const body = "tree "+tree+"\\n"+(parent?"parent "+parent+"\\n":"")+
+    "author You <you@local> "+ts+" +0000\\ncommitter You <you@local> "+ts+" +0000\\n\\n"+message+"\\n";
+  const h = gitHashObject("commit", body);
+  objects.set(h,{type:"commit",tree,parent,message});
+  updateRef(HEAD, h);               // advance current branch — the "branch moves" rule!
+  return h;
+}
+function log_(){ let h=refs.get(HEAD); while(h){ const o=objects.get(h); log(h.slice(0,7)+"  "+o.message); h=o.parent; } }
+
+// ---- drive it like real git ----
+commit({ "README": "# minigit\\n" }, "init project", 1700000000);
+commit({ "README": "# minigit\\n", "app.js": "console.log(1)\\n" }, "add app", 1700000060);
+commit({ "README": "# minigit v2\\n", "app.js": "console.log(1)\\n" }, "update readme", 1700000120);
+
+log("=== git log ==="); log_();
+log("");
+log("HEAD ->", HEAD, "->", refs.get(HEAD).slice(0,7));
+log("objects stored:", objects.size, "(blobs + trees + commits, deduplicated)");`, note:'this is a real, working VCS — run it'})}
+
+  ${Quiz([
+    {q:'In your commit() function, what makes the branch "move forward"?', options:['Creating the tree','updateRef(HEAD, newCommitHash)','Hashing the blob'], answer:1, explain:'Writing the new commit hash into the current branch ref is exactly how real git advances a branch.', card:['In minigit, what advances the branch on commit?','updateRef(HEAD, newHash) — rewriting the current branch ref to the new commit.']},
+    {q:'Why does committing the same file twice not double storage?', type:'text', answer:['same hash','dedup','content','deduplicate','reuse','same content'], explain:'Identical content → identical hash → objects.set overwrites the same key. Deduplication, for free.'}
+  ])}
+  <div class="cliff"><span class="k">last lesson</span><p style="margin:.3em 0 0">You built it. Now for the reveal — and where to go next to make it production-grade.</p></div>
+`},
+
+{id:'capstone-reveal',part:'V · Build Your Own VCS',title:'17 · The reveal & beyond',xp:100,render:()=>`
+  <div class="lesson-tag">Part V · Lesson 17 · 🎉</div>
+  <h2>The reveal</h2>
+  <p class="lead">The <code>commit</code> / <code>writeTree</code> / <code>updateRef</code> engine you just built? It's the same shape as <code>MiniGit</code> — the engine that's been powering every "simulated terminal" since Lesson 3.</p>
+  <div class="callout aha"><span class="k">you've been driving your own creation</span>Every <code>git commit</code> you typed into a terminal in this course ran through an object store, hashed blobs/trees/commits with the exact recipe you implemented, and advanced a ref. The graphs you watched grow were renders of that store. <b>You didn't learn about git — you reconstructed it, then operated it.</b></div>
+
+  <h3>What you can now explain from first principles</h3>
+  <div class="grid2">
+    <div class="callout" style="margin:0"><span class="k">why branching is instant</span>A branch is a tiny file holding a hash. Creating one writes one ref.</div>
+    <div class="callout" style="margin:0"><span class="k">why history is tamper-evident</span>Each hash includes its content + parents; altering anything changes every downstream hash.</div>
+    <div class="callout" style="margin:0"><span class="k">why snapshots aren't wasteful</span>Identical content shares one hash-addressed object. Unchanged files are reused.</div>
+    <div class="callout" style="margin:0"><span class="k">why rebase rewrites history</span>Replayed commits are new objects with new hashes; originals are abandoned.</div>
+  </div>
+
+  <h3>From minigit → real git: your roadmap</h3>
+  <ol>
+    <li><b>Persist to disk.</b> Write objects as zlib-compressed files under <code>.git/objects/ab/cdef…</code> (first 2 hash chars = folder). Refs as files under <code>.git/refs/</code>.</li>
+    <li><b>The index format.</b> Implement a real staging area: <code>.git/index</code> is a binary file of staged entries. (We modeled it as a Map.)</li>
+    <li><b>Real diff & three-way merge.</b> Implement Myers diff, then merge by applying both sides' diffs against the merge base; detect conflicts when both touch the same hunk.</li>
+    <li><b>Packfiles.</b> Add delta-compression + a pack index for storage/transfer efficiency (Lesson 14).</li>
+    <li><b>The transfer protocol.</b> Implement <code>fetch</code>/<code>push</code>: negotiate which objects the other side lacks, send a packfile.</li>
+    <li><b>Switch to SHA-256.</b> Modern git supports it. Since identity and storage are decoupled, it's a localized change — exactly as Lesson 14 hinted.</li>
+  </ol>
+  <div class="callout"><span class="k">recommended deep dives</span>Read the <i>Git Internals</i> chapter of the free <a href="https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain">Pro Git book</a>, then play with the plumbing commands you now understand: <code>git hash-object</code>, <code>git cat-file -p</code>, <code>git write-tree</code>, <code>git update-ref</code>, <code>git rev-list</code>. Everything will look familiar — because you built their tiny twins.</div>
+
+  <h3>Final boss — open recall</h3>
+  ${Quiz([
+    {q:'In one line: what IS git?', type:'text', answer:['content addressable','objects and refs','content-addressed','hash','object store','snapshots'], explain:'A content-addressable object store (blobs/trees/commits) plus refs pointing into it. You can now defend that sentence completely.', card:['One-line definition of git?','A content-addressable object store (blob/tree/commit) + refs pointing into it.']},
+    {q:'Which did you NOT have to implement to make a working VCS in Lesson 16?', options:['hashing objects','advancing a ref on commit','a central server','building a tree from files'], answer:2, explain:'No server needed — git is distributed; a repo is fully functional standalone. That\'s the whole point.'}
+  ])}
+
+  <div class="complete-bar" style="border-color:var(--green)">
+    <div class="txt"><b style="color:var(--green)">🏆 Course complete.</b><br><span style="color:var(--dim)">You understand git deeply enough to rebuild it. Go read the plumbing — it'll feel like home.</span></div>
+  </div>
+  <p style="text-align:center;color:var(--dim);margin-top:24px">Made to be shared · one file · works offline · <a href="#" id="shareHint">how to share →</a></p>
+`},
+];
+
+/* ============================================================================
+   PART G — HAND-AUTHORED SVG SCENES
+   ========================================================================== */
+// Brutalist scheme: the helpers IGNORE caller colors and enforce white fills +
+// black strokes, translating only two emphasis signals — merge nodes (#bc8cff)
+// and HEAD labels (#ffa657) become accent yellow.
+const SVGMONO="'JetBrains Mono',monospace";
+function box(x,y,w,h,fill,stroke,r){return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="0" fill="#fff" stroke="#000" stroke-width="2.5"/>`;}
+function txt(x,y,t,fill,size,anchor,weight){const c=(fill==='#8b949e')?'#555':'#000';return `<text x="${x}" y="${y}" fill="${c}" font-family="${SVGMONO}" font-size="${size||13}" text-anchor="${anchor||'start'}" font-weight="${(weight&&weight!=='normal')?'700':'600'}">${t}</text>`;}
+function commitNode(x,y,label,color,head){const fill=(color==='#bc8cff')?'#ccff00':'#fff';return `<circle cx="${x}" cy="${y}" r="13" fill="${fill}" stroke="#000" stroke-width="${head?4:2.5}"/>${txt(x,y+4,label,'#000',11,'middle','bold')}`;}
+function arrow(x1,y1,x2,y2,color){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000" stroke-width="2.5" marker-end="url(#ah)"/>`;}
+const SVGW=720,SVGH=300;
+function wrapSVG(inner){return `<svg viewBox="0 0 ${SVGW} ${SVGH}" style="background:${svgBG}"><defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#000"/></marker></defs>${inner}</svg>`;}
+
+function threeTreesSVG(step){
+  const cols=[{x:60,label:'WORKING DIR',c:'#58a6ff'},{x:300,label:'STAGING (index)',c:'#d29922'},{x:540,label:'REPOSITORY',c:'#3fb950'}];
+  let s='';
+  cols.forEach(col=>{ s+=box(col.x,60,140,180,'#0d1117',col.c,10)+txt(col.x+70,48,col.label,col.c,12,'middle','bold'); });
+  // file representations per step
+  const fileAt=(x,y,name,color)=>box(x,y,100,30,'#161b22',color)+txt(x+50,y+20,name,'#e6edf3',12,'middle');
+  s+=fileAt(80,90,'app.js *','#58a6ff');
+  if(step>=1) s+=fileAt(320,90,'app.js','#d29922')+arrow(190,105,318,105,'#d29922');
+  if(step>=2){ s+=fileAt(560,90,'app.js','#3fb950')+arrow(430,105,558,105,'#3fb950'); s+=txt(610,140,'commit','#3fb950',12,'middle'); }
+  if(step>=2 && step<3) s+=txt(370,140,'(clean)','#8b949e',12,'middle');
+  if(step>=3){ s+=fileAt(80,140,'app.js **','#58a6ff'); s+=txt(130,200,'edited again','#8b949e',11,'middle'); }
+  const caps=['Working directory: real files on disk.','add → staging.','commit → repository.','cycle repeats.'];
+  return wrapSVG(s);
+}
+function treeSVG(step){
+  let s=box(40,40,180,40,'#1c2330','#bc8cff')+txt(130,65,'tree (root)','#bc8cff',13,'middle','bold');
+  s+=arrow(130,80,130,120);
+  s+=box(40,120,180,46,'#161b22','#58a6ff')+txt(130,140,'greeting.txt','#e6edf3',12,'middle')+txt(130,158,'→ ce01362 (blob)','#8b949e',11,'middle');
+  if(step>=1){ s+=arrow(220,60,360,60); s+=box(360,40,200,46,'#161b22','#bc8cff')+txt(460,60,'src/  → (subtree)','#bc8cff',12,'middle')+txt(460,78,'a tree pointing to a tree','#8b949e',10,'middle');
+    s+=arrow(460,86,460,120); s+=box(380,120,160,46,'#161b22','#58a6ff')+txt(460,140,'main.js','#e6edf3',12,'middle')+txt(460,158,'→ 8f2a1c (blob)','#8b949e',11,'middle'); }
+  if(step>=2){ s+=txt(300,210,'root tree → (transitively) every file = ONE full snapshot','#3fb950',13,'middle','bold'); }
+  return wrapSVG(s);
+}
+function commitObjSVG(){
+  let s=box(220,40,280,210,'#1c2330','#3fb950',10)+txt(360,30,'commit object (just text)','#3fb950',13,'middle','bold');
+  const lines=[['tree 57e9529…','#bc8cff'],['parent 9a1c… ','#58a6ff'],['author You … 1700000000','#8b949e'],['committer You … 1700000000','#8b949e'],['','#fff'],['  add greeting','#e6edf3']];
+  lines.forEach((l,i)=>{ s+=txt(240,75+i*28,l[0],l[1],13); });
+  s+=txt(360,270,'…then hashed with "commit <len>\\0" header','#ffa657',11,'middle');
+  return wrapSVG(s);
+}
+function dagSVG(step){
+  // positions for up to 5 commits
+  const P={C1:[120,150],C2:[260,150],C3:[400,150],C4:[400,80],C5:[540,115]};
+  let s='';
+  const drawn=[];
+  function edge(a,b){ s+=arrow(P[a][0]-13,P[a][1],P[b][0]+13,P[b][1]); }
+  if(step>=1) edge('C2','C1');
+  if(step>=2) edge('C3','C2');
+  if(step>=3) edge('C4','C2');
+  if(step>=4){ edge('C5','C3'); edge('C5','C4'); }
+  s+=commitNode(P.C1[0],P.C1[1],'C1','#58a6ff');
+  if(step>=1) s+=commitNode(P.C2[0],P.C2[1],'C2','#58a6ff');
+  if(step>=2) s+=commitNode(P.C3[0],P.C3[1],'C3','#58a6ff');
+  if(step>=3) s+=commitNode(P.C4[0],P.C4[1],'C4','#58a6ff');
+  if(step>=4) s+=commitNode(P.C5[0],P.C5[1],'C5','#bc8cff',false);
+  if(step>=4) s+=txt(540,95,'merge!','#bc8cff',11,'middle');
+  s+=txt(360,250,'arrows point to PARENTS — backward in time','#8b949e',12,'middle');
+  return wrapSVG(s);
+}
+function refLabel(x,y,t,c){const w=Math.max(48,t.length*8+12);const bg=(c==='#ffa657')?'#ccff00':'#fff';return `<rect x="${x}" y="${y}" width="${w}" height="24" rx="0" fill="${bg}" stroke="#000" stroke-width="2.5"/>`+`<text x="${x+w/2}" y="${y+16}" fill="#000" font-family="${SVGMONO}" font-size="11" font-weight="700" text-anchor="middle">${t}</text>`;}
+function refsSVG(step){
+  const P={C1:[180,170],C2:[340,170],C3:[500,170]};
+  let s=arrow(P.C2[0]-13,P.C2[1],P.C1[0]+13,P.C1[1]);
+  if(step>=2) s+=arrow(P.C3[0]-13,P.C3[1],P.C2[0]+13,P.C2[1]);
+  s+=commitNode(P.C1[0],P.C1[1],'C1','#58a6ff');
+  s+=commitNode(P.C2[0],P.C2[1],'C2','#58a6ff',step<2);
+  if(step>=2) s+=commitNode(P.C3[0],P.C3[1],'C3','#58a6ff',true);
+  const tip = step>=2?'C3':'C2'; const tx=P[tip][0];
+  s+=refLabel(tx-30,90,'main','#3fb950')+arrow(tx,114,tx,P[tip][1]-15,'#3fb950');
+  if(step>=1){ s+=refLabel(tx-34,50,'HEAD','#ffa657')+arrow(tx,74,tx,90,'#ffa657'); }
+  const caps=['ref main = a file holding C2\'s hash.','HEAD → main → C2.','commit → main rewritten to C3.'];
+  return wrapSVG(s+txt(360,250,caps[step],'#8b949e',12,'middle'));
+}
+function branchSVG(step){
+  const P={C2:[200,170],C3:[360,110]};
+  let s=commitNode(P.C2[0],P.C2[1],'C2','#58a6ff', step<2);
+  if(step>=3){ s=arrow(P.C3[0]-13,P.C3[1],P.C2[0]+13,P.C2[1])+s; s+=commitNode(P.C3[0],P.C3[1],'C3','#58a6ff',true); }
+  s+=refLabel(150,90,'main','#3fb950')+arrow(175,114,P.C2[0]-6,P.C2[1]-12,'#3fb950');
+  if(step>=1){ const fx= step>=3?P.C3[0]:P.C2[0]; const fy=step>=3?P.C3[1]:P.C2[1]; s+=refLabel(fx+24,(step>=3?70:130),'feature','#58a6ff')+arrow(fx+30,(step>=3?94:130)+0,fx+13,fy,'#58a6ff'); }
+  const headTip = step>=2 ? (step>=3?'C3':'C2') : 'C2';
+  if(step>=2){ s+=refLabel(P[headTip]? P[headTip][0]-34:240, 40,'HEAD→feature','#ffa657'); }
+  else { s+=refLabel(150,52,'HEAD→main','#ffa657'); }
+  const caps=['main → C2, HEAD → main.','git branch feature: new pointer at C2.','git checkout feature: only HEAD moves.','commit: feature advances to C3, main stays.'];
+  return wrapSVG(s+txt(360,250,caps[step],'#8b949e',12,'middle'));
+}
+function ffSVG(step){
+  const P={C1:[160,150],C2:[320,150],C3:[480,150]};
+  let s=arrow(P.C2[0]-13,P.C2[1],P.C1[0]+13,P.C1[1])+arrow(P.C3[0]-13,P.C3[1],P.C2[0]+13,P.C2[1]);
+  s+=commitNode(P.C1[0],P.C1[1],'C1','#58a6ff')+commitNode(P.C2[0],P.C2[1],'C2','#58a6ff')+commitNode(P.C3[0],P.C3[1],'C3','#58a6ff',true);
+  const mainAt = step>=1 ? 'C3':'C1';
+  s+=refLabel(P[mainAt][0]-30,90,'main','#3fb950')+arrow(P[mainAt][0],114,P[mainAt][0],135,'#3fb950');
+  s+=refLabel(P.C3[0]-34,210,'feature','#58a6ff')+arrow(P.C3[0],208,P.C3[0],165,'#58a6ff');
+  const caps=['main at C1; feature ahead at C3.','merge: main is an ancestor → just slide main to C3.','Fast-forward done — a straight line, no merge commit.'];
+  return wrapSVG(s+txt(360,255,caps[step],'#8b949e',12,'middle'));
+}
+function tw3SVG(step){
+  const P={C2:[180,150],C3:[360,90],C4:[360,210],C5:[520,150]};
+  let s=arrow(P.C3[0]-13,P.C3[1],P.C2[0]+8,P.C2[1]-8)+arrow(P.C4[0]-13,P.C4[1],P.C2[0]+8,P.C2[1]+8);
+  if(step>=2){ s+=arrow(P.C5[0]-13,P.C5[1],P.C3[0]+10,P.C3[1]+6)+arrow(P.C5[0]-13,P.C5[1],P.C4[0]+10,P.C4[1]-6); }
+  s+=commitNode(P.C2[0],P.C2[1],'C2','#58a6ff')+commitNode(P.C3[0],P.C3[1],'C3','#58a6ff')+commitNode(P.C4[0],P.C4[1],'C4','#58a6ff');
+  if(step>=2) s+=commitNode(P.C5[0],P.C5[1],'C5','#bc8cff',true);
+  s+=refLabel(P.C3[0]-30,45,'feature','#58a6ff');
+  s+=refLabel((step>=2?P.C5[0]:P.C4[0])-20,245,'main','#3fb950');
+  if(step>=1&&step<2) s+=txt(180,120,'merge base','#ffa657',11,'middle');
+  const caps=['Both moved: main→C4, feature→C3, base=C2. Diverged.','Find common ancestor (C2), compare both sides to it.','New merge commit C5 with TWO parents. Rejoined.'];
+  return wrapSVG(s+txt(360,255,caps[step]||'','#8b949e',12,'middle'));
+}
+function rebaseSVG(step){
+  const P={C1:[140,150],C2:[300,150],C3:[300,80],C4:[440,80],C3b:[460,150],C4b:[600,150]};
+  let s='';
+  if(step<2){ s+=arrow(P.C2[0]-13,P.C2[1],P.C1[0]+13,P.C1[1])+arrow(P.C3[0]-8,P.C3[1]+13,P.C1[0]+10,P.C1[1]-8)+arrow(P.C4[0]-13,P.C4[1],P.C3[0]+13,P.C3[1]);
+    s+=commitNode(P.C1[0],P.C1[1],'C1','#58a6ff')+commitNode(P.C2[0],P.C2[1],'C2','#58a6ff')+commitNode(P.C3[0],P.C3[1],'C3','#58a6ff')+commitNode(P.C4[0],P.C4[1],'C4','#58a6ff',true);
+    s+=refLabel(P.C2[0]-20,200,'main','#3fb950')+refLabel(P.C4[0]+20,60,'feature','#58a6ff');
+  } else {
+    s+=arrow(P.C2[0]-13,P.C2[1],P.C1[0]+13,P.C1[1])+arrow(P.C3b[0]-13,P.C3b[1],P.C2[0]+13,P.C2[1])+arrow(P.C4b[0]-13,P.C4b[1],P.C3b[0]+13,P.C3b[1]);
+    s+=commitNode(P.C1[0],P.C1[1],'C1','#58a6ff')+commitNode(P.C2[0],P.C2[1],'C2','#58a6ff')+commitNode(P.C3b[0],P.C3b[1],"C3'",'#bc8cff')+commitNode(P.C4b[0],P.C4b[1],"C4'",'#bc8cff',true);
+    s+=refLabel(P.C2[0]-20,200,'main','#3fb950')+refLabel(P.C4b[0]+18,200,'feature','#58a6ff');
+  }
+  const caps=['feature (C3,C4) off C1; main moved to C2. Diverged.','rebase main: replay C3,C4 onto C2…','…as NEW commits C3\',C4\'. Linear. Old ones abandoned.'];
+  return wrapSVG(s+txt(360,255,caps[step],'#8b949e',12,'middle'));
+}
+function remoteSVG(step){
+  let s=box(60,50,250,180,'#0d1117','#58a6ff',10)+txt(185,42,'YOUR REPO','#58a6ff',12,'middle','bold');
+  s+=box(420,50,250,180,'#0d1117','#3fb950',10)+txt(545,42,'REMOTE (origin)','#3fb950',12,'middle','bold');
+  // local commits
+  s+=commitNode(120,120,'C2','#58a6ff')+(step>=1?arrow(170,120-13,134,120-13,'#3b5070'):'');
+  if(step>=1){ s+=arrow(180,120,134,120); s+=commitNode(200,120,'C3','#58a6ff',true);}
+  s+=refLabel(95,165,'main','#3fb950');
+  if(step>=1) s+=refLabel(150,200,'origin/main (=C2, stale)','#8b949e');
+  // remote commits
+  s+=commitNode(480,120,'C2','#3fb950', step<2);
+  if(step>=2){ s+=arrow(540,120,494,120); s+=commitNode(560,120,'C3','#3fb950',true); }
+  if(step>=1&&step<2) s+=txt(360,120,'push →','#ffa657',13,'middle');
+  if(step>=3) s+=txt(360,150,'← fetch','#ffa657',13,'middle');
+  const caps=['Both have complete repos, synced at C2.','You commit C3 locally; remote unaware; origin/main stale at C2.','push: send C3, move remote main to C3. Synced.','fetch: pull their objects, update origin/main. (pull=fetch+merge)'];
+  return wrapSVG(s+txt(360,255,caps[step],'#8b949e',12,'middle'));
+}
+function worktreeSVG(step){
+  let s=box(280,40,180,70,'#1c2330','#bc8cff',10)+txt(370,70,'.git object bag','#bc8cff',12,'middle','bold')+txt(370,90,'(shared history)','#8b949e',10,'middle');
+  s+=box(120,180,200,70,'#0d1117','#58a6ff',10)+txt(220,210,'/myapp','#58a6ff',12,'middle','bold')+txt(220,230,'HEAD → feature','#8b949e',11,'middle');
+  s+=arrow(300,180,330,112,'#3b5070');
+  if(step>=1){ s+=box(420,180,200,70,'#0d1117','#3fb950',10)+txt(520,210,'/myapp-hot','#3fb950',12,'middle','bold')+txt(520,230,'HEAD → main','#8b949e',11,'middle'); s+=arrow(440,180,410,112,'#3b5070'); }
+  if(step>=2){ s+=txt(220,275,'feature: untouched','#58a6ff',11,'middle'); s+=txt(520,275,'fixing bug here','#3fb950',11,'middle'); }
+  return wrapSVG(s);
+}
+function packSVG(step){
+  let s='';
+  if(step===0){ for(let i=0;i<5;i++){ s+=box(120+i*90,120,70,50,'#161b22','#58a6ff')+txt(155+i*90,150,'obj','#8b949e',11,'middle'); } s+=txt(360,200,'loose objects: one compressed file each','#8b949e',12,'middle'); }
+  else if(step===1){ s+=box(140,110,440,70,'#1c2330','#d29922',10)+txt(360,100,'packfile','#d29922',12,'middle','bold'); s+=txt(360,140,'base + delta + delta + delta …','#e6edf3',12,'middle'); s+=txt(360,210,'similar objects stored as differences','#8b949e',12,'middle'); }
+  else { s+=box(140,90,300,90,'#1c2330','#d29922',10)+txt(290,80,'packfile','#d29922',12,'middle','bold')+txt(290,130,'thousands of versions','#e6edf3',12,'middle')+txt(290,155,'in a fraction of the space','#8b949e',11,'middle'); s+=box(470,90,140,90,'#161b22','#58a6ff',10)+txt(540,80,'pack index','#58a6ff',12,'middle','bold')+txt(540,135,'hash → offset','#8b949e',11,'middle'); s+=txt(360,215,'any object still reconstructable on demand','#3fb950',12,'middle'); }
+  return wrapSVG(s);
+}
+function blueprintSVG(){
+  let s=box(80,160,560,90,'#1c2330','#58a6ff',10)+txt(360,150,'OBJECT STORE  (content-addressed, immutable)','#58a6ff',13,'middle','bold');
+  ['blob','tree','commit'].forEach((t,i)=>{ s+=box(140+i*170,185,120,45,'#0d1117','#58a6ff')+txt(200+i*170,212,t,'#e6edf3',13,'middle'); });
+  s+=box(180,40,360,70,'#1c2330','#3fb950',10)+txt(360,30,'REFS  (pointers into the store)','#3fb950',13,'middle','bold');
+  ['HEAD','branches','tags'].forEach((t,i)=>{ s+=box(210+i*120,62,90,34,'#0d1117','#3fb950')+txt(255+i*120,84,t,'#e6edf3',12,'middle'); });
+  s+=arrow(360,110,360,158,'#ffa657');
+  s+=txt(360,135,'point to','#ffa657',11,'middle');
+  return wrapSVG(s);
+}
+
+/* ============================================================================
+   PART H — APP SHELL: routing, nav, progress, flashcards
+   ========================================================================== */
+const main=document.getElementById('main'), nav=document.getElementById('nav');
+let currentIdx=0;
+
+function buildNav(){
+  let html='', lastPart=null;
+  LESSONS.forEach((L,i)=>{
+    if(L.part!==lastPart){ html+=`<div class="part">${L.part}</div>`; lastPart=L.part; }
+    const done=State.isDone(L.id);
+    html+=`<a data-i="${i}" class="${i===currentIdx?'active':''} ${done?'done':''}"><span class="dot">${done?'✓':''}</span>${L.title}</a>`;
+  });
+  nav.innerHTML=html;
+  nav.querySelectorAll('a').forEach(a=>a.onclick=()=>go(+a.dataset.i));
+}
+function go(i){
+  currentIdx=Math.max(0,Math.min(LESSONS.length-1,i));
+  const L=LESSONS[currentIdx];
+  sessionTick++;
+  const isDone=State.isDone(L.id);
+  const completeBtn = L.id==='capstone-reveal' ? '' :
+    `<div class="complete-bar"><div class="txt">${isDone?'<span style="color:var(--green)">✓ Lesson complete</span> — revisit anytime.':'Finished this lesson? Lock it in.'}</div>
+     <button class="btn ${isDone?'':'primary'}" id="markBtn">${isDone?'✓ Completed (+'+L.xp+' XP)':'Mark complete +'+L.xp+' XP'}</button></div>`;
+  const prev = currentIdx>0?`<button class="btn" id="prevBtn">‹ ${LESSONS[currentIdx-1].title}</button>`:'<span></span>';
+  const next = currentIdx<LESSONS.length-1?`<button class="btn primary" id="nextBtn">${LESSONS[currentIdx+1].title} ›</button>`:'<span></span>';
+  main.innerHTML = L.render() + completeBtn + `<div class="pagebtns">${prev}${next}</div>`;
+  main.scrollTop=0; window.scrollTo(0,0);
+  const mb=document.getElementById('markBtn'); if(mb) mb.onclick=()=>{ State.markDone(L.id,L.xp); refreshStats(); buildNav(); go(currentIdx); };
+  const pb=document.getElementById('prevBtn'); if(pb) pb.onclick=()=>go(currentIdx-1);
+  const nb=document.getElementById('nextBtn'); if(nb) nb.onclick=()=>go(currentIdx+1);
+  const sh=document.getElementById('shareHint'); if(sh) sh.onclick=(e)=>{e.preventDefault(); alert('This entire course is one self-contained .html file.\\n\\nTo share: just send the file (email, Slack, USB, anything).\\nIt runs offline in any modern browser — no server, no install, no account.\\n\\nProgress is saved per-browser via localStorage.');};
+  buildNav();
+  refreshStats();
+}
+function refreshStats(){
+  document.getElementById('xp').textContent=State.s.xp;
+  document.getElementById('streak').textContent=State.s.streak;
+  const total=LESSONS.length, done=LESSONS.filter(L=>State.isDone(L.id)).length;
+  const pct=Math.round(done/total*100);
+  const ring=document.getElementById('ring'); ring.style.setProperty('--p',pct); document.getElementById('ringTxt').textContent=pct+'%';
+  const due=State.dueCards().length; const dc=document.getElementById('dueCount'); dc.textContent=due;
+}
+
+/* ---- Flashcard review modal ---- */
+const modal=document.getElementById('cardModal');
+let reviewQueue=[], reviewCur=null;
+function openReview(){
+  reviewQueue=State.dueCards().map(([id,c])=>({id,...c}));
+  if(!reviewQueue.length){ alert('No cards due right now! 🎉\\n\\nMissed quiz questions become flashcards and resurface here as you keep studying (spaced repetition).'); return; }
+  modal.classList.add('show'); nextCard();
+}
+function nextCard(){
+  if(!reviewQueue.length){ modal.classList.remove('show'); refreshStats(); return; }
+  reviewCur=reviewQueue.shift();
+  document.getElementById('cardBox').textContent='box '+reviewCur.box+' / 5';
+  document.getElementById('cardFront').innerHTML=reviewCur.front;
+  const back=document.getElementById('cardBack'); back.innerHTML=reviewCur.back; back.classList.remove('show');
+  const row=document.getElementById('cardRow');
+  row.innerHTML='<button class="btn primary" id="cardFlip">Flip card</button>';
+  document.getElementById('cardFlip').onclick=showBack;
+}
+function showBack(){
+  document.getElementById('cardBack').classList.add('show');
+  const row=document.getElementById('cardRow');
+  row.innerHTML='<button class="btn" id="cardAgain">😕 Again</button><button class="btn primary" id="cardGood">😎 Got it</button>';
+  document.getElementById('cardAgain').onclick=()=>{ State.gradeCard(reviewCur.id,false); reviewQueue.push({...reviewCur,box:1}); sessionTick++; nextCard(); };
+  document.getElementById('cardGood').onclick=()=>{ State.gradeCard(reviewCur.id,true); sessionTick+=2; nextCard(); };
+}
+document.getElementById('reviewBtn').onclick=openReview;
+modal.onclick=(e)=>{ if(e.target===modal) modal.classList.remove('show'); };
+
+/* ---- boot ---- */
+buildNav(); go(0); refreshStats();
+</script>
+</body>
+</html>

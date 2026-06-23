@@ -1,0 +1,43 @@
+---
+title: "Hello, Interactive Blog"
+date: "2026-06-23"
+summary: "Why this blog runs on MDX — so posts can mix prose, code, images, and live React components on the same page."
+tag: "ARTICLE"
+---
+
+import Counter from "../../components/blog/Counter";
+
+This blog is written in **MDX**: Markdown for the prose, with the option to drop
+real React components right into the page. That means a post can be a plain essay
+— or a tiny interactive playground — without changing any infrastructure.
+
+## Markdown handles the basics
+
+Everything you expect from Markdown works: **bold**, _italic_, `inline code`,
+[links](/blog/git-from-the-inside-out/), lists, quotes, and tables.
+
+- Images live in `public/` and are referenced by path
+- Videos are a raw `<video>` tag or an embed
+- Diagrams can be exported SVGs or generated from code
+
+> The platform is boring on purpose. The energy goes into writing, not plumbing.
+
+## Code blocks are syntax-highlighted
+
+```ts
+function gitHashObject(type: string, content: Uint8Array): string {
+  const header = `${type} ${content.length}\0`;
+  return sha1(concat(utf8(header), content)); // matches real git
+}
+```
+
+## And posts can be *alive*
+
+Below is a real, stateful React component embedded inline in this post. Click it:
+
+<Counter label="Clicks" />
+
+That's the whole point of MDX — when an idea is better felt than described, the
+explanation can become interactive. For larger experiences, posts link out to
+standalone apps, like the [Git From The Inside Out](/blog/git-from-the-inside-out/)
+course.
